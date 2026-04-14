@@ -10,28 +10,39 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/styles.css">
 <style>
-.case-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:box-shadow var(--tr)}
-.case-card:active{box-shadow:var(--sh)}
-.case-hdr{padding:12px 14px 8px}
-.case-ref{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--txmt);text-transform:uppercase;margin-bottom:2px}
-.case-addr{font-size:15px;font-weight:600;color:var(--tx);line-height:1.3;margin-bottom:6px}
-.case-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--txmt)}
-.case-footer{padding:8px 14px 10px;border-top:1px solid var(--bd);background:var(--sf2)}
-.pipeline{display:flex;gap:3px;align-items:center}
-.pip-stage{flex:1;height:4px;border-radius:2px;background:var(--bd);transition:background var(--tr)}
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;margin-top:12px}
+.stat-cell{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:10px 8px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;line-height:1;margin-bottom:3px}
+.stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--txmt);line-height:1.3}
+/* Compact case cards */
+.case-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:7px;cursor:pointer;transition:opacity var(--tr);display:flex;align-items:stretch;overflow:hidden}
+.case-card:active{opacity:.75}
+.case-side{width:4px;flex-shrink:0}
+.case-side.assigned{background:var(--bd)}
+.case-side.progress{background:var(--bl)}
+.case-side.delayed{background:var(--am)}
+.case-side.complete{background:var(--gn)}
+.case-body{flex:1;padding:9px 11px;min-width:0}
+.case-top{display:flex;align-items:baseline;gap:6px;margin-bottom:2px}
+.case-ref{font-size:10px;font-weight:700;color:var(--txmt);letter-spacing:.6px;flex-shrink:0}
+.case-addr{font-size:13px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.case-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.case-meta-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--txmt);min-width:0}
+.case-dl{font-size:10px;text-align:right;flex-shrink:0}
+.pip-bar{display:flex;gap:2px;margin-bottom:5px}
+.pip-stage{flex:1;height:3px;border-radius:2px;background:var(--bd)}
 .pip-stage.done{background:var(--gn)}
 .pip-stage.active{background:var(--bl)}
 .pip-stage.delayed{background:var(--am)}
-.status-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
-.status-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;letter-spacing:.3px}
+.status-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px;white-space:nowrap}
 .badge-assigned{background:var(--sf2);color:var(--txmt);border:1px solid var(--bd)}
 .badge-progress{background:var(--blbg);color:var(--bl)}
 .badge-delayed{background:var(--ambg);color:var(--am)}
 .badge-complete{background:var(--gnbg);color:var(--gn)}
-.deadline-txt{font-size:11px;color:var(--txmt)}
+.deadline-txt{color:var(--txmt)}
 .deadline-urgent{color:var(--rd);font-weight:600}
 .deadline-soon{color:var(--am);font-weight:600}
-.date-grp{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--txmt);padding:14px 0 6px}
 </style>
 </head>
 <body>
@@ -47,7 +58,8 @@
   </div>
   <div class="page-content">
     <div class="pgw">
-      <div style="position:relative;margin-bottom:12px;margin-top:12px">
+      <div class="stats-bar" id="stats-bar"></div>
+      <div style="position:relative;margin-bottom:10px">
         <input type="text" id="search-inp" placeholder="Search ref, address, client..."
                style="padding-left:32px" oninput="searchQuery=this.value;renderCases()">
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
@@ -71,6 +83,7 @@
 'use strict';
 
 let searchQuery = '';
+function localISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
 
 // ── Helpers ───────────────────────────────────────────────────
 function getStages(c) {
@@ -127,8 +140,26 @@ function pipelineBar(c) {
   }).join('');
 }
 
-// ── Render ────────────────────────────────────────────────────
+// ── Render stats bar ─────────────────────────────────────────
+function renderStats() {
+  const el = document.getElementById('stats-bar'); if (!el) return;
+  const all = VA.db.cases||[];
+  const today = localISO(new Date());
+  const stages = c => getStages(c);
+  const isComplete = c => c.stage && c.stage === stages(c)[stages(c).length-1];
+  const completed = all.filter(isComplete).length;
+  const ongoing = all.length - completed;
+  // Upcoming inspections = cases with inspDate >= today and not complete
+  const upcoming = all.filter(c => c.inspDate && c.inspDate >= today && !isComplete(c)).length;
+  el.innerHTML =
+    `<div class="stat-cell"><div class="stat-num" style="color:var(--bl)">${ongoing}</div><div class="stat-lbl">Ongoing</div></div>` +
+    `<div class="stat-cell"><div class="stat-num" style="color:var(--am)">${upcoming}</div><div class="stat-lbl">Upcoming<br>Inspections</div></div>` +
+    `<div class="stat-cell"><div class="stat-num" style="color:var(--gn)">${completed}</div><div class="stat-lbl">Completed</div></div>`;
+}
+
+// ── Render cases ──────────────────────────────────────────────
 function renderCases() {
+  renderStats();
   const el = document.getElementById('case-list'); if (!el) return;
   const q = (searchQuery||'').toLowerCase();
   let cases = (VA.db.cases||[]).slice();
@@ -142,7 +173,6 @@ function renderCases() {
     );
   }
 
-  // Sort by deadline asc (no deadline = end), then by createdAt desc
   cases.sort((a,b) => {
     const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
     if (da !== db2) return da < db2 ? -1 : 1;
@@ -159,25 +189,29 @@ function renderCases() {
   el.innerHTML = cases.map(c => {
     const st = caseStatus(c);
     const dl = deadlineLabel(c.deadline);
-    const linked = c.projectId ? `<span style="font-size:11px;color:var(--gn)">&#128279; Linked</span>` : '';
+    // Side colour maps to status
+    const sideMap = { 'badge-assigned':'assigned', 'badge-progress':'progress', 'badge-delayed':'delayed', 'badge-complete':'complete' };
+    const sideCls = sideMap[st.cls]||'assigned';
+    const inspMeta = c.inspDate ? `<span>&#128197; ${VA.fmtDate(c.inspDate)}</span>` : '';
+    const clientMeta = c.client ? `<span>&#128100; ${VA.esc(c.client)}</span>` : '';
+    const linkedMeta = c.projectId ? `<span style="color:var(--gn)">&#128279;</span>` : '';
+    const dlHtml = dl
+      ? `<div class="${dl.cls}" style="font-size:10px;font-weight:600">${dl.txt}</div>${dl.sub ? `<div style="font-size:9px;color:var(--txmt)">${dl.sub}</div>` : ''}`
+      : '';
     return `<div class="case-card" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
-      <div class="case-hdr">
-        <div class="case-ref">${c.ref ? VA.esc(c.ref) : '— no ref —'}</div>
-        <div class="case-addr">${VA.esc(c.addr||'No address')}</div>
-        <div class="case-meta">
-          ${c.client ? `<span>&#128100; ${VA.esc(c.client)}</span>` : ''}
-          ${c.inspDate ? `<span>&#128197; ${VA.fmtDate(c.inspDate)}</span>` : ''}
-          ${linked}
+      <div class="case-side ${sideCls}"></div>
+      <div class="case-body">
+        <div class="pip-bar">${pipelineBar(c)}</div>
+        <div class="case-top">
+          <span class="case-ref">${c.ref ? '#'+VA.esc(c.ref) : '—'}</span>
+          <span class="case-addr">${VA.esc(c.addr||'No address')}</span>
         </div>
-      </div>
-      <div class="case-footer">
-        <div class="pipeline">${pipelineBar(c)}</div>
-        <div class="status-row">
-          <span class="status-badge ${st.cls}">${VA.esc(st.label)}</span>
-          ${dl ? `<div style="text-align:right">
-            <div class="${dl.cls}" style="font-size:11px">${dl.txt}</div>
-            ${dl.sub ? `<div style="font-size:10px;color:var(--txmt);margin-top:1px">${dl.sub}</div>` : ''}
-          </div>` : ''}
+        <div class="case-bottom">
+          <div class="case-meta-row">
+            <span class="status-badge ${st.cls}">${VA.esc(st.label)}</span>
+            ${clientMeta}${inspMeta}${linkedMeta}
+          </div>
+          ${dl ? `<div class="case-dl">${dlHtml}</div>` : ''}
         </div>
       </div>
     </div>`;
@@ -186,7 +220,7 @@ function renderCases() {
 
 function newCase() {
   const id = VA.uid();
-  const today = new Date().toISOString().slice(0,10);
+  const today = localISO(new Date());
   const defaultCl = (VA.db.checklists||[])[0];
   VA.db.cases.push({
     id, ref:'', addr:'', client:'', phone:'',

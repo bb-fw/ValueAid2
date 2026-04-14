@@ -50,7 +50,12 @@
 <script>
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 let cY,cM,cSel;
-function initCal(){const n=new Date();cY=n.getFullYear();cM=n.getMonth();cSel=n.toISOString().slice(0,10);}
+function localISO(d) {
+  // Returns YYYY-MM-DD in LOCAL timezone, not UTC
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function initCal(){const n=new Date();cY=n.getFullYear();cM=n.getMonth();cSel=localISO(n);}
 function calPrev(){cM--;if(cM<0){cM=11;cY--;}renderCal();}
 function calNext(){cM++;if(cM>11){cM=0;cY++;}renderCal();}
 function buildEventMap() {
@@ -71,7 +76,7 @@ function buildEventMap() {
 
 function renderCal(){
   document.getElementById('cal-label').textContent=MONTHS[cM]+' '+cY;
-  const today=new Date().toISOString().slice(0,10);
+  const today=localISO(new Date());
   const ev=buildEventMap();
   const first=new Date(cY,cM,1).getDay(),dim=new Date(cY,cM+1,0).getDate(),prev=new Date(cY,cM,0).getDate();
   let h=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dl">${d}</div>`).join('');

@@ -125,9 +125,8 @@ function buildCase(c) {
   } else {
     linkedHtml = '<div class="unlinked-box">' +
       '<span style="font-size:18px;color:var(--txmt)">&#128279;</span>' +
-      '<div style="flex:1;font-size:12px;color:var(--txmt)">Not linked to an inspection project</div>' +
-      '<button class="btn bs bsm" onclick="openLinkPicker()">Link</button>' +
-      '<button class="btn bs bsm" onclick="createLinkedProject()">+ New</button></div>';
+      '<div style="flex:1;font-size:12px;color:var(--txmt)">No inspection project linked</div>' +
+      '<button class="btn bs bsm" onclick="createLinkedProject()">+ Create Project</button></div>';
   }
 
   const delayedCls = c.delayed ? 'btn bsm' : 'btn bs bsm';
