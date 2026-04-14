@@ -54,6 +54,19 @@
         </div>
       </div>
 
+      <!-- ── CASE TRACKER ───────────────────────────────────── -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Case Tracker</div>
+
+      <!-- CHECKLIST -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Checklist</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <p class="hint mb8">Pipeline stages used when creating new cases. Each case takes a snapshot of the chosen checklist.</p>
+          <button class="btn bp bsm mb8" onclick="openNewChecklist()">+ New Checklist</button>
+          <div id="cl-list"></div>
+        </div>
+      </div>
+
       <!-- ── INSPECTION SETUP ──────────────────────────────── -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Inspection Setup</div>
       <div style="background:var(--blbg);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--bl);line-height:1.6">
@@ -151,21 +164,6 @@
 
       <!-- ── DATA ───────────────────────────────────────────── -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Data</div>
-
-      <!-- CASE TRACKER -->
-      <div class="card mb12">
-        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>&#128203; Case Tracker</h3><span class="chev">&#9660;</span></div>
-        <div class="card-collapse-body">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div>
-              <div style="font-size:13px;font-weight:600">Checklist</div>
-              <div style="font-size:12px;color:var(--txmt)">Pipeline stages used when creating new cases</div>
-            </div>
-            <button class="btn bs bsm" onclick="openNewChecklist()">+ New</button>
-          </div>
-          <div id="cl-list"></div>
-        </div>
-      </div>
 
       <div class="card mb12">
         <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Export &amp; Import</h3><span class="chev">&#9660;</span></div>
@@ -740,7 +738,24 @@ function importTpls(inp){
 function exportAllData(){downloadBlob(new Blob([JSON.stringify(VA.db,null,2)],{type:'application/json'}),'valueaid-backup-'+new Date().toISOString().slice(0,10)+'.json');toast('Exported');}
 function importAllData(inp){
   const f=inp.files[0];if(!f)return;
-  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(confirm('Replace all current data?')){Object.assign(VA.db,d);VA.seed();VA.save();applyTheme(VA.db.settings?.theme||'light');renderAllLists(); renderCLList();renderCatList();renderRLList();populateTplSelect();loadTplEditor();toast('Imported');}}catch{toast('Invalid file');}};r.readAsText(f);inp.value='';
+  const r=new FileReader();r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!confirm('Replace all current data?')) return;
+      // Explicitly reset fields that may be absent in older backups
+      // so stale in-memory data is never silently retained
+      d.cases      = d.cases      || [];
+      d.checklists = d.checklists || [];
+      Object.assign(VA.db, d);
+      VA.seed(); // re-seeds default checklist if checklists is empty
+      VA.save();
+      applyTheme(VA.db.settings?.theme||'light');
+      renderAllLists(); renderCLList(); renderCatList(); renderRLList();
+      populateTplSelect(); loadTplEditor();
+      toast('Imported');
+    }catch{toast('Invalid file');}
+  };
+  r.readAsText(f); inp.value='';
 }
 
 function dismissNotice(){document.getElementById('storage-notice').style.display='none';try{localStorage.setItem('va_notice_dismissed','1');}catch(e){}}

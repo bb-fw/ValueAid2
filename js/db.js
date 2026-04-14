@@ -92,6 +92,9 @@ function load() {
     const r = localStorage.getItem(DB_KEY);
     if (r) db = Object.assign(db, JSON.parse(r));
   } catch(e) {}
+  // Ensure new collections always exist even if missing from old saved data
+  if (!Array.isArray(db.cases))      db.cases = [];
+  if (!Array.isArray(db.checklists)) db.checklists = [];
   // Migrate: ensure case refs are strings
   (db.cases||[]).forEach(c => { if(c.ref) c.ref=String(c.ref); });
   // Migrate: normalise any old project cats that still have string items

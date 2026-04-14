@@ -14,7 +14,7 @@
 <div id="app">
   <header class="app-header">
     <a href="index.html" class="logo">ValueAid <span>Schedule</span></a>
-    <div class="hdr-acts"><a href="settings.html" class="hbtn">&#9881;</a></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600">&#9881; Settings</a></div>
   </header>
   <div id="travel-banner" class="travel-banner">
     <div class="pulse"></div>
@@ -53,19 +53,41 @@ let cY,cM,cSel;
 function initCal(){const n=new Date();cY=n.getFullYear();cM=n.getMonth();cSel=n.toISOString().slice(0,10);}
 function calPrev(){cM--;if(cM<0){cM=11;cY--;}renderCal();}
 function calNext(){cM++;if(cM>11){cM=0;cY++;}renderCal();}
+function buildEventMap() {
+  // ev[date] = { inspections: [], deadlines: [], caseInspections: [] }
+  const ev = {};
+  const ensure = iso => { if(!ev[iso]) ev[iso]={inspections:[],deadlines:[],caseInspections:[]}; };
+  // Linked inspection projects (only those NOT linked to a case, to avoid duplication)
+  VA.db.projects.forEach(p => {
+    if (p.date && !p.caseId) { ensure(p.date); ev[p.date].inspections.push(p); }
+  });
+  // Cases: inspection date + deadline
+  (VA.db.cases||[]).forEach(c => {
+    if (c.inspDate) { ensure(c.inspDate); ev[c.inspDate].caseInspections.push(c); }
+    if (c.deadline) { ensure(c.deadline); ev[c.deadline].deadlines.push(c); }
+  });
+  return ev;
+}
+
 function renderCal(){
   document.getElementById('cal-label').textContent=MONTHS[cM]+' '+cY;
   const today=new Date().toISOString().slice(0,10);
-  const ev={};VA.db.projects.forEach(p=>{if(p.date){if(!ev[p.date])ev[p.date]=[];ev[p.date].push(p);}});
+  const ev=buildEventMap();
   const first=new Date(cY,cM,1).getDay(),dim=new Date(cY,cM+1,0).getDate(),prev=new Date(cY,cM,0).getDate();
   let h=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dl">${d}</div>`).join('');
   for(let i=0;i<first;i++)h+=`<div class="cal-day other-month"><span class="dn">${prev-first+i+1}</span></div>`;
   for(let d=1;d<=dim;d++){
     const iso=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const cnt=ev[iso]?ev[iso].length:0;
-    h+=`<div class="cal-day${iso===today?' today':''}${iso===cSel?' selected':''}${cnt?' has-events':''}" data-iso="${iso}" onclick="calSel('${iso}')">
+    const e=ev[iso]||{inspections:[],deadlines:[],caseInspections:[]};
+    const totalInsp=(e.inspections.length)+(e.caseInspections.length);
+    const hasDeadline=e.deadlines.length>0;
+    const hasEvents=totalInsp>0||hasDeadline;
+    let dots='';
+    if(totalInsp>0) dots+=`<span style="width:5px;height:5px;border-radius:50%;background:var(--gd);display:inline-block"></span>`;
+    if(hasDeadline) dots+=`<span style="width:5px;height:5px;border-radius:50%;background:var(--rd);display:inline-block"></span>`;
+    h+=`<div class="cal-day${iso===today?' today':''}${iso===cSel?' selected':''}${hasEvents?' has-events':''}" data-iso="${iso}" onclick="calSel('${iso}')">
       <span class="dn">${d}</span>
-      ${cnt?`<span style="font-size:9px;font-weight:700;color:var(--gd);margin-top:1px;line-height:1">${cnt}</span>`:''}
+      ${dots?`<div style="display:flex;gap:2px;justify-content:center;margin-top:1px">${dots}</div>`:''}
     </div>`;
   }
   const rem=(7-(first+dim)%7)%7;for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month"><span class="dn">${i}</span></div>`;
@@ -82,14 +104,42 @@ function calSel(iso) {
 }
 function renderEvs(date){
   const el=document.getElementById('cal-events');
-  const pj=VA.db.projects.filter(p=>p.date===date);
-  if(!pj.length){el.innerHTML=`<p style="font-size:13px;color:var(--txmt);padding:7px 3px">No inspections on ${VA.fmtDateLong(date)}.</p>`;return;}
-  el.innerHTML=`<div class="sh mt8"><h2>Inspections — ${VA.fmtDateLong(date)}</h2></div>`+
-    pj.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
-      <div class="ev-time">${p.time||'Time not set'} &bull; ${VA.esc(p.ptype||'Property')}</div>
+  const ev=buildEventMap();
+  const e=ev[date]||{inspections:[],deadlines:[],caseInspections:[]};
+  const hasAnything=e.inspections.length||e.caseInspections.length||e.deadlines.length;
+  if(!hasAnything){
+    el.innerHTML=`<p style="font-size:13px;color:var(--txmt);padding:7px 3px">Nothing on ${VA.fmtDateLong(date)}.</p>`;
+    return;
+  }
+  let html='';
+  // Standalone inspections (not linked to a case)
+  if(e.inspections.length){
+    html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
+    html+=e.inspections.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
+      <div class="ev-time">${VA.esc(p.time||'Time not set')} &bull; ${VA.esc(p.ptype||'Property')}</div>
       <div class="ev-title">${VA.esc(p.addr||'Untitled')}</div>
       <div class="ev-sub">${p.valuer?'Valuer: '+VA.esc(p.valuer):''}${p.cond?' &bull; '+VA.esc(p.cond):''}</div>
     </div>`).join('');
+  }
+  // Case inspections
+  if(e.caseInspections.length){
+    html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
+    html+=e.caseInspections.map(c=>`<div class="ev-item" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
+      <div class="ev-time">${VA.esc(c.inspTime||'Time not set')}${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
+      <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
+      <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${c.delayed?' &bull; <span style="color:var(--am)">Delayed</span>':''}</div>
+    </div>`).join('');
+  }
+  // Deadlines
+  if(e.deadlines.length){
+    html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--rd);display:inline-block"></span>Case Deadlines — ${VA.fmtDateLong(date)}</h2></div>`;
+    html+=e.deadlines.map(c=>`<div class="ev-item" style="border-left:3px solid var(--rd)" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
+      <div class="ev-time" style="color:var(--rd)">&#9888; Deadline${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
+      <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
+      <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${' &bull; Stage: '+VA.esc(c.stage||'—')}</div>
+    </div>`).join('');
+  }
+  el.innerHTML=html;
 }
 pageInit();initCal();renderCal();
 </script>

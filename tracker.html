@@ -38,7 +38,7 @@
 <div id="app">
   <header class="app-header">
     <a href="index.html" class="logo">ValueAid <span>Tracker</span></a>
-    <div class="hdr-acts"><a href="settings.html" class="hbtn">&#9881;</a></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600">&#9881; Settings</a></div>
   </header>
   <div id="travel-banner" class="travel-banner">
     <div class="pulse"></div>
@@ -93,10 +93,25 @@ function deadlineLabel(deadline) {
   const today = new Date(); today.setHours(0,0,0,0);
   const dl = new Date(deadline+'T00:00:00');
   const diff = Math.round((dl-today)/(1000*60*60*24));
-  if (diff < 0) return { txt: `Overdue ${Math.abs(diff)}d`, cls:'deadline-urgent' };
-  if (diff === 0) return { txt: 'Due today', cls:'deadline-urgent' };
-  if (diff <= 3) return { txt: `Due in ${diff}d`, cls:'deadline-soon' };
-  return { txt: `Due ${VA.fmtDate(deadline)}`, cls:'deadline-txt' };
+  let txt, cls, sub;
+  if (diff < 0) {
+    txt = 'Due ' + VA.fmtDate(deadline);
+    sub = Math.abs(diff) + ' day' + (Math.abs(diff)===1?'':'s') + ' overdue';
+    cls = 'deadline-urgent';
+  } else if (diff === 0) {
+    txt = 'Due today';
+    sub = null;
+    cls = 'deadline-urgent';
+  } else if (diff <= 3) {
+    txt = 'Due ' + VA.fmtDate(deadline);
+    sub = 'in ' + diff + ' day' + (diff===1?'':'s');
+    cls = 'deadline-soon';
+  } else {
+    txt = 'Due ' + VA.fmtDate(deadline);
+    sub = 'in ' + diff + ' day' + (diff===1?'':'s');
+    cls = 'deadline-txt';
+  }
+  return { txt, sub, cls };
 }
 
 function pipelineBar(c) {
@@ -157,7 +172,10 @@ function renderCases() {
         <div class="pipeline">${pipelineBar(c)}</div>
         <div class="status-row">
           <span class="status-badge ${st.cls}">${VA.esc(st.label)}</span>
-          ${dl ? `<span class="${dl.cls}">${dl.txt}</span>` : ''}
+          ${dl ? `<div style="text-align:right">
+            <div class="${dl.cls}" style="font-size:11px">${dl.txt}</div>
+            ${dl.sub ? `<div style="font-size:10px;color:var(--txmt);margin-top:1px">${dl.sub}</div>` : ''}
+          </div>` : ''}
         </div>
       </div>
     </div>`;

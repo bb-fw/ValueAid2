@@ -10,19 +10,28 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/styles.css">
 <style>
-.stage-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
-.stage-btn{flex:1;min-width:80px;padding:9px 6px;border-radius:var(--r);border:1.5px solid var(--bd);background:var(--sf);color:var(--txmt);font-size:12px;font-weight:500;text-align:center;cursor:pointer;transition:all var(--tr);line-height:1.3;user-select:none}
-.stage-btn.active{border-color:var(--bl);background:var(--blbg);color:var(--bl);font-weight:700}
-.stage-btn.complete{border-color:var(--gn);background:var(--gnbg);color:var(--gn);font-weight:700}
-.stage-btn:active{opacity:.75}
-.delayed-toggle{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);margin:8px 0}
+.prog-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);border-radius:var(--r);margin-bottom:6px;background:var(--sf);cursor:pointer;user-select:none;transition:all var(--tr)}
+.prog-item.active{border-color:var(--bl);background:var(--blbg)}
+.prog-item.complete{border-color:var(--gn);background:var(--gnbg)}
+.prog-item:active{opacity:.8}
+.prog-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all var(--tr)}
+.prog-item.active .prog-dot{border-color:var(--bl);background:var(--bl);color:#fff}
+.prog-item.complete .prog-dot{border-color:var(--gn);background:var(--gn);color:#fff}
+.prog-label{flex:1;font-size:14px;font-weight:500;color:var(--txmt)}
+.prog-item.active .prog-label{color:var(--bl);font-weight:600}
+.prog-item.complete .prog-label{color:var(--gn);font-weight:600}
 .linked-box{background:var(--gnbg);border:1px solid var(--gn);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .unlinked-box{background:var(--sf2);border:1px dashed var(--bd);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .ref-warn{font-size:11px;color:var(--am);margin-top:3px;display:none}
 .ref-warn.show{display:block}
-.quick-date{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.quick-date{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;align-items:center}
 .qdBtn{font-size:11px;padding:4px 10px;border-radius:10px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;white-space:nowrap}
 .qdBtn:active{background:var(--sf2)}
+.cat-menu{position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);z-index:300;min-width:160px;padding:4px 0;display:none}
+.cat-menu.open{display:block}
+.cat-menu-item{padding:11px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--tx)}
+.cat-menu-item:active{background:var(--sf2)}
+.cat-menu-item.danger{color:var(--rd)}
 </style>
 </head>
 <body>
@@ -30,7 +39,7 @@
   <header class="app-header">
     <a href="tracker.html" class="hbtn">&#8592;</a>
     <span class="logo" id="ce-title" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Case</span>
-    <div class="hdr-acts"><a href="settings.html" class="hbtn">&#9881;</a></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600">&#9881; Settings</a></div>
   </header>
   <div class="page-content">
     <div class="pgw" id="ce-body">
@@ -44,19 +53,17 @@
 </div>
 <div id="toast"></div>
 
-<!-- CONFIRM DELETE -->
 <div class="overlay center" id="ov-conf">
   <div class="modal-box">
-    <h3>Delete Case?</h3>
-    <p id="conf-msg">This cannot be undone.</p>
+    <h3 id="conf-title">Confirm</h3>
+    <p id="conf-msg" style="white-space:pre-wrap;font-size:13px;line-height:1.5"></p>
     <div class="modal-footer">
       <button class="btn bs" onclick="closeOv('ov-conf')">Cancel</button>
-      <button class="btn brd" id="conf-btn">Delete</button>
+      <button class="btn brd" id="conf-btn">Confirm</button>
     </div>
   </div>
 </div>
 
-<!-- LINK PROJECT PICKER -->
 <div class="overlay" id="va-picker-ov">
   <div class="sheet" style="display:flex;flex-direction:column;max-height:88vh">
     <div id="va-pk-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px"></div>
@@ -87,7 +94,6 @@
 let cid = null;
 const gC = () => (VA.db.cases||[]).find(x => x.id === cid);
 
-// ── Business day helpers ──────────────────────────────────────
 function addBusinessDays(date, days) {
   const d = new Date(date + 'T00:00:00');
   let added = 0;
@@ -104,298 +110,318 @@ function addDays(date, days) {
   return d.toISOString().slice(0, 10);
 }
 
+function getLinkConflicts(c, p) {
+  const conflicts = [];
+  const fields = [
+    { label: 'Ref No.', cVal: c.ref, pVal: p.ref },
+    { label: 'Address', cVal: c.addr, pVal: p.addr },
+    { label: 'Inspection Date', cVal: c.inspDate, pVal: p.date },
+    { label: 'Inspection Time', cVal: c.inspTime, pVal: p.time },
+  ];
+  fields.forEach(f => {
+    const cHas = f.cVal && String(f.cVal).trim();
+    const pHas = f.pVal && String(f.pVal).trim();
+    if (cHas && pHas && f.cVal !== f.pVal) {
+      conflicts.push(f.label + ': Case "' + f.cVal + '" vs Project "' + f.pVal + '" — Case value will be used');
+    } else if (!cHas && pHas) {
+      conflicts.push(f.label + ': Project has "' + f.pVal + '" — case field is empty, project value kept');
+    }
+  });
+  return conflicts;
+}
+
 // ── Build page ────────────────────────────────────────────────
 function buildCase(c) {
   document.getElementById('ce-title').textContent = c.ref ? '#' + c.ref : 'New Case';
-  const stages = c.checklistSnapshot || VA.BUILTIN_STAGES;
-  const lastStageIdx = stages.length - 1;
 
-  // Linked project indicator
   let linkedHtml = '';
   if (c.projectId) {
     const p = VA.db.projects.find(x => x.id === c.projectId);
-    linkedHtml = `<div class="linked-box">
-      <span style="font-size:18px">&#128279;</span>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--gn)">Linked to Inspection Project</div>
-        <div style="font-size:12px;color:var(--tx)">${VA.esc(p ? (p.addr||p.ref||'Project') : 'Project (not found)')}</div>
-      </div>
-      <button class="btn bs bsm" onclick="viewLinkedProject()">View</button>
-      <button class="btn brd bsm" onclick="unlinkProject()">Unlink</button>
-    </div>`;
+    linkedHtml = '<div class="linked-box">' +
+      '<span style="font-size:18px">&#128279;</span>' +
+      '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--gn)">Linked to Inspection Project</div>' +
+      '<div style="font-size:12px;color:var(--tx)">' + VA.esc(p ? (p.addr||p.ref||'Project') : 'Project (not found)') + '</div></div>' +
+      '<button class="btn bs bsm" onclick="viewLinkedProject()">View</button>' +
+      '<button class="btn brd bsm" onclick="unlinkProject()">Unlink</button></div>';
   } else {
-    linkedHtml = `<div class="unlinked-box">
-      <span style="font-size:18px;color:var(--txmt)">&#128279;</span>
-      <div style="flex:1;font-size:12px;color:var(--txmt)">Not linked to an inspection project</div>
-      <button class="btn bs bsm" onclick="openLinkPicker()">Link</button>
-      <button class="btn bs bsm" onclick="createLinkedProject()">+ New</button>
-    </div>`;
+    linkedHtml = '<div class="unlinked-box">' +
+      '<span style="font-size:18px;color:var(--txmt)">&#128279;</span>' +
+      '<div style="flex:1;font-size:12px;color:var(--txmt)">Not linked to an inspection project</div>' +
+      '<button class="btn bs bsm" onclick="openLinkPicker()">Link</button>' +
+      '<button class="btn bs bsm" onclick="createLinkedProject()">+ New</button></div>';
   }
 
-  document.getElementById('ce-body').innerHTML = `
-    ${linkedHtml}
+  const delayedCls = c.delayed ? 'btn bsm' : 'btn bs bsm';
+  const delayedStyle = c.delayed ? 'background:var(--am);border-color:var(--am);color:#fff' : '';
 
-    <div class="sectlbl">Case Information</div>
+  document.getElementById('ce-body').innerHTML = linkedHtml +
 
-    <div class="fg">
-      <label class="fl">Reference No. <span style="font-size:11px;color:var(--txmt)">(6-digit numeric)</span></label>
-      <input type="text" id="ce-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123"
-             value="${VA.esc(c.ref||'')}" oninput="ceRefInput(this.value)">
-      <div class="ref-warn" id="ref-warn">&#9888; Ref no. should be exactly 6 digits</div>
-    </div>
+    '<div class="sectlbl">Case Information</div>' +
 
-    <div class="fg">
-      <label class="fl">Address</label>
-      <input type="text" id="ce-addr" placeholder="Property address" value="${VA.esc(c.addr||'')}" oninput="ceSave()">
-    </div>
+    '<div class="fg"><label class="fl">Reference No. <span style="font-size:11px;color:var(--txmt)">(6-digit numeric)</span></label>' +
+    '<input type="text" id="ce-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123" value="' + VA.esc(c.ref||'') + '" oninput="ceRefInput(this.value)">' +
+    '<div class="ref-warn" id="ref-warn">&#9888; Ref no. should be exactly 6 digits</div></div>' +
 
-    <div class="r2">
-      <div class="fg">
-        <label class="fl">Client / Contact</label>
-        <input type="text" id="ce-client" placeholder="Name" value="${VA.esc(c.client||'')}" oninput="ceSave()">
-      </div>
-      <div class="fg">
-        <label class="fl">Mobile No.</label>
-        <input type="tel" id="ce-phone" placeholder="+65 9xxx xxxx" value="${VA.esc(c.phone||'')}" oninput="ceSave()">
-      </div>
-    </div>
+    '<div class="fg"><label class="fl">Address</label>' +
+    '<input type="text" id="ce-addr" placeholder="Property address" value="' + VA.esc(c.addr||'') + '" oninput="ceSave()"></div>' +
 
-    <div class="r2">
-      <div class="fg">
-        <label class="fl">Inspection Date</label>
-        <input type="date" id="ce-inspdate" value="${c.inspDate||''}" onchange="ceSave()">
-      </div>
-      <div class="fg">
-        <label class="fl">Inspection Time</label>
-        <input type="time" id="ce-insptime" value="${c.inspTime||''}" onchange="ceSave()">
-      </div>
-    </div>
+    '<div class="fg"><label class="fl">Client / Contact</label>' +
+    '<input type="text" id="ce-client" placeholder="Name" value="' + VA.esc(c.client||'') + '" oninput="ceSave()"></div>' +
 
-    <div class="r2">
-      <div class="fg">
-        <label class="fl">Created</label>
-        <input type="date" id="ce-created" value="${c.createdAt||''}" onchange="ceSave()">
-      </div>
-      <div class="fg">
-        <label class="fl">Deadline</label>
-        <input type="date" id="ce-deadline" value="${c.deadline||''}" onchange="ceSave()">
-      </div>
-    </div>
-    <div class="quick-date">
-      <button class="qdBtn" onclick="setDeadlineQuick(5, false)">+5 days</button>
-      <button class="qdBtn" onclick="setDeadlineQuick(5, true)">+1 biz week</button>
-      <button class="qdBtn" onclick="setDeadlineQuick(10, true)">+2 biz weeks</button>
-    </div>
+    '<div class="fg"><label class="fl">Mobile No.</label>' +
+    '<input type="tel" id="ce-phone" placeholder="e.g. 9123 4567" value="' + VA.esc(c.phone||'') + '" oninput="cePhoneInput(this)"></div>' +
 
-    <div class="divider"></div>
-    <div class="sectlbl">Progress</div>
+    '<div class="r2">' +
+    '<div class="fg"><label class="fl">Inspection Date</label><input type="date" id="ce-inspdate" value="' + (c.inspDate||'') + '" onchange="ceSave()"></div>' +
+    '<div class="fg"><label class="fl">Inspection Time</label><input type="time" id="ce-insptime" value="' + (c.inspTime||'') + '" onchange="ceSave()"></div>' +
+    '</div>' +
 
-    <div style="margin-bottom:8px">
-      <div class="stage-row" id="stage-row">
-        ${stages.map((st, i) => {
-          const isActive = (c.stage||stages[0]) === st;
-          const isComplete = st === stages[lastStageIdx];
-          const cls = isActive ? (isComplete ? 'stage-btn complete' : 'stage-btn active') : 'stage-btn';
-          return `<button class="${cls}" onclick="setStage('${VA.esc(st)}')">${VA.esc(st)}</button>`;
-        }).join('')}
-      </div>
-    </div>
+    '<div class="fg"><label class="fl">Created</label>' +
+    '<input type="date" id="ce-created" value="' + (c.createdAt||'') + '" onchange="ceSave()"></div>' +
 
-    <div class="delayed-toggle">
-      <span style="flex:1;font-size:14px;font-weight:500">&#9200; Mark as Delayed</span>
-      <button id="delayed-tog" class="toggle${c.delayed?' on':''}" onclick="toggleDelayed()"></button>
-    </div>
+    '<div class="fg"><label class="fl">Deadline</label>' +
+    '<input type="date" id="ce-deadline" value="' + (c.deadline||'') + '" onchange="ceSave()">' +
+    '<div class="quick-date"><span style="font-size:11px;color:var(--txmt)">Set deadline:</span>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(5,false)">+5 days</button>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(5,true)">+1 biz week</button>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(10,true)">+2 biz weeks</button></div></div>' +
 
-    <div class="divider"></div>
-    <div class="sectlbl">Notes</div>
-    <div class="fg">
-      <textarea id="ce-notes" rows="4" placeholder="General notes about this case..."
-                oninput="ceSave()">${VA.esc(c.notes||'')}</textarea>
-    </div>
-  `;
+    '<div class="divider"></div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+    '<div class="sectlbl" style="margin:0">Progress</div>' +
+    '<div style="display:flex;align-items:center;gap:8px">' +
+    '<button id="delayed-tog" class="' + delayedCls + '" style="' + delayedStyle + '" onclick="toggleDelayed()">&#9200; Delayed</button>' +
+    '<button class="btn bs bsm" onclick="addProgressStage()">+ Add</button>' +
+    '</div></div>' +
+    '<div id="prog-list"></div>' +
 
-  // Validate ref on load
+    '<div class="divider"></div>' +
+    '<div class="sectlbl">Notes</div>' +
+    '<div class="fg"><textarea id="ce-notes" rows="4" placeholder="General notes about this case..." oninput="ceSave()">' + VA.esc(c.notes||'') + '</textarea></div>';
+
+  renderProgList(c);
   ceRefInput(c.ref||'');
 }
 
-// ── Stage & delayed ───────────────────────────────────────────
+// ── Progress pipeline ─────────────────────────────────────────
+function renderProgList(c) {
+  const el = document.getElementById('prog-list'); if (!el) return;
+  const stages = c.checklistSnapshot || VA.BUILTIN_STAGES;
+  const currentStage = c.stage || (stages[0]||'');
+  const lastIdx = stages.length - 1;
+
+  if (!stages.length) {
+    el.innerHTML = '<p class="hint">No stages. Tap + Add to add one.</p>';
+    return;
+  }
+  el.innerHTML = stages.map((st, i) => {
+    const isActive = currentStage === st;
+    const isComplete = isActive && i === lastIdx;
+    let cls = 'prog-item';
+    if (isComplete) cls += ' complete';
+    else if (isActive) cls += ' active';
+    const dot = isActive ? (isComplete ? '✓' : '●') : '';
+    return '<div class="' + cls + '" onclick="setStage(\'' + VA.esc(st) + '\')">' +
+      '<div class="prog-dot">' + dot + '</div>' +
+      '<span class="prog-label">' + VA.esc(st) + '</span>' +
+      '<div style="display:flex;align-items:center" onclick="event.stopPropagation()">' +
+      '<button class="btn bs bsm" style="padding:3px 7px;font-size:14px;line-height:1" id="progmenu-btn-' + i + '" onclick="toggleProgMenu(' + i + ',event)">&#8942;</button>' +
+      '<div class="cat-menu" id="progmenu-' + i + '">' +
+      '<div class="cat-menu-item" onclick="closeProgMenu();moveStage(' + i + ',-1)"' + (i===0?' style="opacity:.4;pointer-events:none"':'') + '>&#8593; Move Up</div>' +
+      '<div class="cat-menu-item" onclick="closeProgMenu();moveStage(' + i + ',1)"' + (i===stages.length-1?' style="opacity:.4;pointer-events:none"':'') + '>&#8595; Move Down</div>' +
+      '<div class="cat-menu-item danger" onclick="closeProgMenu();removeStage(' + i + ')">&#10005; Remove</div>' +
+      '</div></div></div>';
+  }).join('');
+}
+
+let _openProgMenu = null;
+function toggleProgMenu(i, e) {
+  e.stopPropagation();
+  const menu = document.getElementById('progmenu-' + i); if (!menu) return;
+  const wasOpen = menu.classList.contains('open');
+  closeProgMenu();
+  if (!wasOpen) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 4) + 'px';
+    const left = Math.min(rect.right - 160, window.innerWidth - 168);
+    menu.style.left = Math.max(8, left) + 'px';
+    menu.classList.add('open');
+    _openProgMenu = i;
+  }
+}
+function closeProgMenu() {
+  if (_openProgMenu !== null) {
+    document.getElementById('progmenu-' + _openProgMenu)?.classList.remove('open');
+    _openProgMenu = null;
+  }
+}
+document.addEventListener('click', closeProgMenu);
+
 function setStage(stage) {
   const c = gC(); if (!c) return;
-  c.stage = stage;
-  VA.save();
-  // Re-render stage buttons only
-  const stages = c.checklistSnapshot || VA.BUILTIN_STAGES;
-  const lastStageIdx = stages.length - 1;
-  const row = document.getElementById('stage-row'); if (!row) return;
-  row.querySelectorAll('.stage-btn').forEach((btn, i) => {
-    const st = stages[i];
-    const isActive = c.stage === st;
-    const isComplete = st === stages[lastStageIdx];
-    btn.className = isActive ? (isComplete ? 'stage-btn complete' : 'stage-btn active') : 'stage-btn';
-  });
+  c.stage = stage; VA.save(); renderProgList(c);
 }
 
 function toggleDelayed() {
   const c = gC(); if (!c) return;
   c.delayed = !c.delayed;
-  document.getElementById('delayed-tog')?.classList.toggle('on', c.delayed);
+  const btn = document.getElementById('delayed-tog');
+  if (btn) {
+    btn.className = c.delayed ? 'btn bsm' : 'btn bs bsm';
+    btn.style.cssText = c.delayed ? 'background:var(--am);border-color:var(--am);color:#fff' : '';
+  }
   VA.save();
 }
 
-// ── Ref input ─────────────────────────────────────────────────
+function addProgressStage() {
+  const name = prompt('New stage name:');
+  if (!name || !name.trim()) return;
+  const c = gC(); if (!c) return;
+  if (!c.checklistSnapshot) c.checklistSnapshot = [...VA.BUILTIN_STAGES];
+  if (c.checklistSnapshot.includes(name.trim())) { toast('Stage already exists'); return; }
+  c.checklistSnapshot.push(name.trim());
+  if (!c.stage) c.stage = c.checklistSnapshot[0];
+  VA.save(); renderProgList(c); toast('Stage added');
+}
+
+function moveStage(i, dir) {
+  const c = gC(); if (!c) return;
+  if (!c.checklistSnapshot) c.checklistSnapshot = [...VA.BUILTIN_STAGES];
+  const arr = c.checklistSnapshot;
+  if (i + dir < 0 || i + dir >= arr.length) return;
+  [arr[i], arr[i+dir]] = [arr[i+dir], arr[i]];
+  VA.save(); renderProgList(c);
+}
+
+function removeStage(i) {
+  const c = gC(); if (!c) return;
+  if (!c.checklistSnapshot) c.checklistSnapshot = [...VA.BUILTIN_STAGES];
+  const arr = c.checklistSnapshot;
+  if (!confirm('Remove stage "' + arr[i] + '"?')) return;
+  if (c.stage === arr[i]) c.stage = arr.find((_,j) => j !== i) || '';
+  arr.splice(i, 1);
+  VA.save(); renderProgList(c);
+}
+
+// ── Phone auto-format (8 digits → XXXX XXXX) ─────────────────
+function cePhoneInput(inp) {
+  const digits = inp.value.replace(/\D/g, '');
+  if (digits.length === 8) {
+    const formatted = digits.slice(0,4) + ' ' + digits.slice(4);
+    if (inp.value !== formatted) inp.value = formatted;
+  }
+  ceSave();
+}
+
+// ── Ref validation ────────────────────────────────────────────
 function ceRefInput(val) {
   const warn = document.getElementById('ref-warn');
-  const valid = /^\d{6}$/.test(val);
-  if (warn) warn.classList.toggle('show', val.length > 0 && !valid);
+  if (warn) warn.classList.toggle('show', val.length > 0 && !/^\d{6}$/.test(val));
   ceSave();
 }
 
 // ── Deadline quick set ────────────────────────────────────────
 function setDeadlineQuick(n, bizDays) {
-  const base = document.getElementById('ce-created')?.value ||
-               new Date().toISOString().slice(0,10);
+  const base = document.getElementById('ce-created')?.value || new Date().toISOString().slice(0,10);
   const dl = bizDays ? addBusinessDays(base, n) : addDays(base, n);
   const inp = document.getElementById('ce-deadline'); if (!inp) return;
-  inp.value = dl;
-  ceSave();
+  inp.value = dl; ceSave();
 }
 
-// ── Save ──────────────────────────────────────────────────────
+// ── Save with sync to linked project ─────────────────────────
 function ceSave() {
   const c = gC(); if (!c) return;
-  const v = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
-  const vt = id => { const el = document.getElementById(id); return el ? el.value.trim() : undefined; };
-  if (vt('ce-ref') !== undefined) {
-    const ref = vt('ce-ref');
-    c.ref = ref;
-    // Sync to linked project
-    if (c.projectId) {
-      const p = VA.db.projects.find(x => x.id === c.projectId);
-      if (p) p.ref = ref;
-    }
-  }
-  if (vt('ce-addr') !== undefined) {
-    c.addr = vt('ce-addr');
-    if (c.projectId) {
-      const p = VA.db.projects.find(x => x.id === c.projectId);
-      if (p) p.addr = c.addr;
-    }
-  }
-  if (vt('ce-client') !== undefined) c.client = vt('ce-client');
-  if (vt('ce-phone') !== undefined) c.phone = vt('ce-phone');
-  if (v('ce-inspdate') !== undefined) {
-    c.inspDate = v('ce-inspdate');
-    if (c.projectId) {
-      const p = VA.db.projects.find(x => x.id === c.projectId);
-      if (p) p.date = c.inspDate;
-    }
-  }
-  if (v('ce-insptime') !== undefined) {
-    c.inspTime = v('ce-insptime');
-    if (c.projectId) {
-      const p = VA.db.projects.find(x => x.id === c.projectId);
-      if (p) p.time = c.inspTime;
-    }
-  }
-  if (v('ce-created') !== undefined) c.createdAt = v('ce-created');
-  if (v('ce-deadline') !== undefined) c.deadline = v('ce-deadline');
-  if (v('ce-notes') !== undefined) c.notes = v('ce-notes');
-  // Update header title
+  const v  = id => { const el=document.getElementById(id); return el?el.value:undefined; };
+  const vt = id => { const el=document.getElementById(id); return el?el.value.trim():undefined; };
+  const syncP = (field, val) => {
+    if (c.projectId) { const p=VA.db.projects.find(x=>x.id===c.projectId); if(p) p[field]=val; }
+  };
+  if (vt('ce-ref')!==undefined)     { c.ref=vt('ce-ref'); syncP('ref',c.ref); }
+  if (vt('ce-addr')!==undefined)    { c.addr=vt('ce-addr'); syncP('addr',c.addr); }
+  if (vt('ce-client')!==undefined)  c.client=vt('ce-client');
+  if (vt('ce-phone')!==undefined)   c.phone=vt('ce-phone');
+  if (v('ce-inspdate')!==undefined) { c.inspDate=v('ce-inspdate'); syncP('date',c.inspDate); }
+  if (v('ce-insptime')!==undefined) { c.inspTime=v('ce-insptime'); syncP('time',c.inspTime); }
+  if (v('ce-created')!==undefined)  c.createdAt=v('ce-created');
+  if (v('ce-deadline')!==undefined) c.deadline=v('ce-deadline');
+  if (v('ce-notes')!==undefined)    c.notes=v('ce-notes');
   document.getElementById('ce-title').textContent = c.ref ? '#' + c.ref : 'New Case';
   VA.save();
 }
 
-function caseClose() { ceSave(); location.href = 'tracker.html'; }
+function caseClose() { ceSave(); location.href='tracker.html'; }
 
-// ── Link / unlink project ─────────────────────────────────────
+// ── Conflict-aware linking ────────────────────────────────────
 function openLinkPicker() {
   const c = gC(); if (!c) return;
-  const projects = VA.db.projects.filter(p => !p.caseId || p.caseId === c.id);
-  if (!projects.length) {
-    toast('No unlinked inspection projects found'); return;
-  }
+  const projects = VA.db.projects.filter(p => !p.caseId || p.caseId===c.id);
+  if (!projects.length) { toast('No unlinked inspection projects found'); return; }
   VA_PICKER.openSingle(
     'Link to Inspection Project',
-    projects.map(p => (p.ref ? '#'+p.ref+' — ' : '') + (p.addr||'No address')),
+    projects.map(p => (p.ref?'#'+p.ref+' — ':'') + (p.addr||'No address')),
     (label) => {
-      const p = projects.find(p => {
-        const lbl = (p.ref ? '#'+p.ref+' — ' : '') + (p.addr||'No address');
-        return lbl === label;
-      });
+      const p = projects.find(p => ((p.ref?'#'+p.ref+' — ':'')+(p.addr||'No address'))===label);
       if (!p) return;
-      c.projectId = p.id;
-      p.caseId = c.id;
-      // Sync shared fields from case → project
-      if (c.ref) p.ref = c.ref;
-      if (c.addr) p.addr = c.addr;
-      if (c.inspDate) p.date = c.inspDate;
-      if (c.inspTime) p.time = c.inspTime;
-      VA.save();
-      buildCase(c);
-      toast('Linked to project');
-    },
-    null
+      const conflicts = getLinkConflicts(c, p);
+      if (conflicts.length) {
+        const msg = 'Linking these records will sync shared fields.\nCase values take priority where both exist:\n\n' +
+          conflicts.map(x=>'• '+x).join('\n') + '\n\nProceed?';
+        if (!confirm(msg)) return;
+      }
+      c.projectId=p.id; p.caseId=c.id;
+      if (c.ref) p.ref=c.ref;
+      if (c.addr) p.addr=c.addr;
+      if (c.inspDate) p.date=c.inspDate;
+      if (c.inspTime) p.time=c.inspTime;
+      VA.save(); buildCase(c); toast('Linked to project');
+    }, null
   );
 }
 
 function unlinkProject() {
-  const c = gC(); if (!c || !c.projectId) return;
-  if (!confirm('Unlink this case from the inspection project?')) return;
-  const p = VA.db.projects.find(x => x.id === c.projectId);
-  if (p) delete p.caseId;
-  c.projectId = null;
-  VA.save(); buildCase(c);
-  toast('Unlinked');
+  const c=gC(); if(!c||!c.projectId) return;
+  if(!confirm('Unlink this case from the inspection project?')) return;
+  const p=VA.db.projects.find(x=>x.id===c.projectId);
+  if(p) delete p.caseId;
+  c.projectId=null; VA.save(); buildCase(c); toast('Unlinked');
 }
 
 function viewLinkedProject() {
-  const c = gC(); if (!c || !c.projectId) return;
-  ceSave();
-  location.href = 'editor.html?id=' + c.projectId;
+  const c=gC(); if(!c||!c.projectId) return;
+  ceSave(); location.href='editor.html?id='+c.projectId;
 }
 
 function createLinkedProject() {
-  const c = gC(); if (!c) return;
+  const c=gC(); if(!c) return;
   ceSave();
-  // Store pending link intent in sessionStorage, picked up by index.html
-  try {
-    sessionStorage.setItem('va_new_from_case', JSON.stringify({ caseId: c.id }));
-  } catch(e) {}
-  location.href = 'index.html?fromCase=1';
+  try { sessionStorage.setItem('va_new_from_case', JSON.stringify({caseId:c.id})); } catch(e) {}
+  location.href='index.html?fromCase=1';
 }
 
 // ── Delete ────────────────────────────────────────────────────
 function confirmDeleteCase() {
-  const c = gC(); if (!c) return;
-  document.getElementById('conf-msg').textContent =
-    `Delete case "${c.ref||c.addr||'this case'}"? Cannot be undone.`;
-  document.getElementById('conf-btn').onclick = () => {
-    // Unlink project if linked
-    if (c.projectId) {
-      const p = VA.db.projects.find(x => x.id === c.projectId);
-      if (p) delete p.caseId;
-    }
-    VA.db.cases = VA.db.cases.filter(x => x.id !== cid);
-    VA.save(); closeOv('ov-conf');
-    toast('Case deleted');
-    setTimeout(() => location.href = 'tracker.html', 400);
+  const c=gC(); if(!c) return;
+  document.getElementById('conf-title').textContent='Delete Case?';
+  document.getElementById('conf-msg').textContent='Delete case "' + (c.ref||c.addr||'this case') + '"? Cannot be undone.';
+  document.getElementById('conf-btn').textContent='Delete';
+  document.getElementById('conf-btn').onclick=()=>{
+    if(c.projectId){const p=VA.db.projects.find(x=>x.id===c.projectId);if(p)delete p.caseId;}
+    VA.db.cases=VA.db.cases.filter(x=>x.id!==cid);
+    VA.save(); closeOv('ov-conf'); toast('Case deleted');
+    setTimeout(()=>location.href='tracker.html',400);
   };
   openOv('ov-conf');
 }
 
 // ── Init ──────────────────────────────────────────────────────
 pageInit();
-document.querySelectorAll('.overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});
 });
-cid = new URLSearchParams(location.search).get('id');
-const kase = gC();
-if (kase) {
-  buildCase(kase);
-} else {
-  document.getElementById('ce-body').innerHTML =
-    '<p style="padding:20px;text-align:center;color:var(--txmt)">Case not found. <a href="tracker.html">Go back</a></p>';
-}
+cid=new URLSearchParams(location.search).get('id');
+const kase=gC();
+if(kase){buildCase(kase);}
+else{document.getElementById('ce-body').innerHTML='<p style="padding:20px;text-align:center;color:var(--txmt)">Case not found. <a href="tracker.html">Go back</a></p>';}
 </script>
 </body>
 </html>
