@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="logo">ValueAid <span>Inspections</span></a>
+    <div class="hdr-acts">
+      <button class="hbtn" onclick="toggleTheme()">&#9680;</button>
+    </div>
+  </header>
+
+  <div id="travel-banner" class="travel-banner">
+    <div class="pulse"></div>
+    <span id="banner-txt" style="flex:1;font-size:13px">Travel in progress...</span>
+    <a href="travel.html" class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:6px 12px">View</a>
+  </div>
+
+  <div class="page-content">
+    <div class="pgw">
+      <div class="sh mt12"><h2 id="proj-count">Projects</h2></div>
+      <div style="position:relative;margin-bottom:12px">
+        <input type="text" id="search-inp" placeholder="Search projects..." style="padding-left:32px" oninput="searchQuery=this.value;renderProjects()">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">&#10138;</span>
+      </div>
+      <div id="proj-list"></div>
+    </div>
+  </div>
+
+  <!-- FAB at bottom right -->
+  <button class="fab" onclick="openNewProject()" title="New Project">&#43;</button>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="ni active"><span class="ni-icon">&#128196;</span>Inspect</a>
+    <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
+    <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
+    <a href="settings.html" class="ni"><span class="ni-icon">&#9881;</span>Settings</a>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<!-- NEW PROJECT SHEET -->
+<div class="overlay" id="ov-new">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-new')">&#10005;</button>
+      <h3>New Inspection Project</h3>
+    </div>
+    <div class="sheet-body">
+      <p style="font-size:13px;color:var(--txmt);margin-bottom:8px">Choose layout:</p>
+      <div class="layout-grid">
+        <div class="layout-btn selected" id="lb-a" onclick="pickLayout('A')">
+          <div class="lb-icon">&#128196;</div>
+          <div class="lb-title">Standard</div>
+          <div class="lb-desc">Findings by category, accommodations by level</div>
+        </div>
+        <div class="layout-btn" id="lb-b" onclick="pickLayout('B')">
+          <div class="lb-icon">&#127968;</div>
+          <div class="lb-title">Per Unit</div>
+          <div class="lb-desc">Findings recorded per unit/room individually</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="fg"><label class="fl">Reference No.</label><input type="text" id="np-ref" placeholder="e.g. 123456"></div>
+      <div class="r2">
+        <div class="fg"><label class="fl">Date of Inspection</label><input type="date" id="np-date"></div>
+        <div class="fg"><label class="fl">Time</label><input type="time" id="np-time"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Valuer-in-Charge</label>
+        <div style="display:flex;gap:6px">
+          <select id="np-valuer" style="flex:1"></select>
+          <button class="btn bs bsm" onclick="openValuerMgr()">Edit</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Property Type</label>
+        <div style="display:flex;gap:6px">
+          <select id="np-ptype" style="flex:1"></select>
+          <button class="btn bs bsm" onclick="openPtypeMgr()">Edit</button>
+        </div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label class="fl">No. of Storeys</label><input type="number" id="np-storeys" min="1" max="99" placeholder="1"></div>
+        <div class="fg"><label class="fl">Occupancy</label>
+          <select id="np-occ">
+            <option value="">— Select —</option>
+            <option>Owner-Occupied</option><option>Tenanted</option><option>Vacant</option>
+            <option>Partially Owner-Occupied &amp; Tenanted</option>
+            <option>Partially Owner-Occupied &amp; Vacant</option>
+            <option>Partially Tenanted &amp; Vacant</option><option>N.A.</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Property Address</label><input type="text" id="np-addr" placeholder="Full address"></div>
+      <div class="fg"><label class="fl">Condition</label>
+        <select id="np-cond">
+          <option value="">— Select —</option>
+          <option>New</option><option>Very Good</option><option>Good</option>
+          <option>Above Average</option><option>Average</option><option>Below Average</option>
+          <option>Fair</option><option>Poor</option><option>Under Construction</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Template</label>
+        <select id="np-tpl"><option value="">— Default —</option></select>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-new')">Cancel</button>
+      <button class="btn bp" style="flex:1" onclick="createProject()">Create Project &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- INLINE MANAGER (valuers / prop types) -->
+<div class="overlay" id="mgr-sheet">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('mgr-sheet')">&#10005;</button>
+      <h3 id="mgr-title">Manage</h3>
+    </div>
+    <div class="sheet-body">
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <input type="text" id="mgr-inp" placeholder="Add new..." style="flex:1">
+        <button class="btn bp bsm" id="mgr-add-btn">Add</button>
+      </div>
+      <div id="mgr-list"></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bp bbl" id="mgr-done-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay center" id="ov-confirm">
+  <div class="modal-box">
+    <h3>Delete Project?</h3>
+    <p id="confirm-msg">This cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeOv('ov-confirm')">Cancel</button>
+      <button class="btn brd" id="confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script>
+let newLayout = 'A';
+
+function condBadge(c) {
+  if (!c) return 'b-nv';
+  if (['New','Very Good','Good','Above Average'].includes(c)) return 'b-gn';
+  if (['Poor','Fair','Below Average'].includes(c)) return 'b-rd';
+  return 'b-am';
+}
+
+let searchQuery = '';
+
+function renderProjects() {
+  const el = document.getElementById('proj-list');
+  const db = VA.db;
+  let sorted = [...db.projects].sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    sorted = sorted.filter(p =>
+      (p.addr||'').toLowerCase().includes(q) ||
+      (p.ref||'').toLowerCase().includes(q) ||
+      (p.ptype||'').toLowerCase().includes(q) ||
+      (p.valuer||'').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('proj-count').textContent = 'Projects (' + VA.db.projects.length + ')';
+  if (!sorted.length) {
+    el.innerHTML = db.projects.length
+      ? '<div class="empty-state"><div class="esi">&#128270;</div><h3>No results</h3><p>No projects match your search.</p></div>'
+      : '<div class="empty-state"><div class="esi">&#128196;</div><h3>No projects yet</h3><p>Tap + to create your first inspection project.</p></div>';
+    return;
+  }
+  el.innerHTML = sorted.map(p => `
+    <div class="proj-card" onclick="location.href='editor.html?id=${p.id}'">
+      <div class="pc-icon">${p.layout==='B' ? '&#127968;' : '&#128196;'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pc-title">${VA.esc(p.addr||'Untitled')}</div>
+        <div class="pc-sub">${p.ref?'#'+VA.esc(p.ref)+' &bull; ':''}${VA.esc(p.valuer||'')}${p.occ?' &bull; '+VA.esc(p.occ):''}</div>
+      </div>
+      <div class="pc-meta">
+        <div class="badge b-nv" style="margin-bottom:4px;font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${VA.esc(p.ptype||'—')}</div>
+        <div style="font-size:12px;color:var(--txmt)">${VA.fmtDate(p.date)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function refreshValuerDrop() {
+  const s = document.getElementById('np-valuer'); if (!s) return;
+  const cur = s.value;
+  s.innerHTML = '<option value="">— Select —</option>' + VA.db.valuers.map(v=>`<option${v===cur?' selected':''}>${VA.esc(v)}</option>`).join('');
+}
+function refreshPtypeDrop() {
+  const s = document.getElementById('np-ptype'); if (!s) return;
+  const cur = s.value;
+  s.innerHTML = '<option value="">— Select —</option>' + VA.db.propertyTypes.map(t=>`<option${t===cur?' selected':''}>${VA.esc(t)}</option>`).join('');
+}
+
+function openValuerMgr() {
+  openInlineMgr('Manage Valuers',
+    () => VA.db.valuers,
+    val => { if (!VA.db.valuers.includes(val)) { VA.db.valuers.push(val); VA.save(); } },
+    i => { VA.db.valuers.splice(i,1); VA.save(); },
+    () => refreshValuerDrop()
+  );
+}
+function openPtypeMgr() {
+  openInlineMgr('Property Types',
+    () => VA.db.propertyTypes,
+    val => { if (!VA.db.propertyTypes.includes(val)) { VA.db.propertyTypes.push(val); VA.save(); } },
+    i => { VA.db.propertyTypes.splice(i,1); VA.save(); },
+    () => refreshPtypeDrop()
+  );
+}
+
+function pickLayout(l) {
+  newLayout = l;
+  document.getElementById('lb-a').classList.toggle('selected', l==='A');
+  document.getElementById('lb-b').classList.toggle('selected', l==='B');
+}
+
+function openNewProject() {
+  newLayout = 'A'; pickLayout('A');
+  const now = new Date();
+  document.getElementById('np-date').value = now.toISOString().slice(0,10);
+  document.getElementById('np-time').value = now.toTimeString().slice(0,5);
+  ['np-ref','np-addr','np-storeys'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('np-occ').value = '';
+  document.getElementById('np-cond').value = '';
+  refreshValuerDrop(); refreshPtypeDrop();
+  // Template dropdown
+  VA.seed();
+  const ts = document.getElementById('np-tpl');
+  ts.innerHTML = VA.db.templates.map((t,i)=>`<option value="${i}">${VA.esc(t.name)}</option>`).join('');
+  const defIdx = VA.db.templates.findIndex(t=>t.name===VA.DEFAULT_TPL);
+  ts.value = defIdx >= 0 ? String(defIdx) : '0';
+  openOv('ov-new');
+}
+
+function createProject() {
+  const addr = document.getElementById('np-addr').value.trim();
+  if (!addr) { toast('Please enter a property address'); return; }
+  const tplIdx = parseInt(document.getElementById('np-tpl').value);
+  const tpl = !isNaN(tplIdx) ? VA.db.templates[tplIdx] : VA.db.templates.find(t=>t.name===VA.DEFAULT_TPL) || VA.db.templates[0];
+  // Warn if template has no categories
+  if (tpl && !(tpl.categoryIds||[]).length) {
+    if (!confirm('The selected template has no categories. The project will start with no inspection findings sections. Continue?')) return;
+  }
+  const p = {
+    id: VA.uid(), layout: newLayout,
+    ref: document.getElementById('np-ref').value.trim(),
+    date: document.getElementById('np-date').value,
+    time: document.getElementById('np-time').value,
+    valuer: document.getElementById('np-valuer').value,
+    ptype: document.getElementById('np-ptype').value,
+    storeys: document.getElementById('np-storeys').value,
+    occ: document.getElementById('np-occ').value,
+    addr, cond: document.getElementById('np-cond').value,
+    remarks: '',
+    cats: tpl ? VA.snapshotCats(tpl) : VA.activeCats().map(c=>({id:c.id,name:c.name,items:c.items.map(it=>({name:it,sel:false})),notes:''})),
+    roomSnapshot: tpl ? VA.snapshotRooms(tpl) : VA.getActiveRooms(),
+    levels: [], createdAt: Date.now()
+  };
+  if (p.layout==='A') p.levels = [{id:VA.uid(),name:'Accommodation',rooms:[],notes:''}];
+  VA.db.projects.push(p); VA.save();
+  closeOv('ov-new');
+  toast('Project created');
+  setTimeout(() => location.href = 'editor.html?id='+p.id, 200);
+}
+
+pageInit();
+renderProjects();
+</script>
+</body>
+</html>

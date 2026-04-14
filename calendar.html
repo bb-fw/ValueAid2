@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid — Calendar</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="logo">ValueAid <span>Schedule</span></a>
+    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+  </header>
+  <div id="travel-banner" class="travel-banner">
+    <div class="pulse"></div>
+    <span id="banner-txt" style="flex:1;font-size:13px">Travel in progress...</span>
+    <a href="travel.html" class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:6px 12px">View</a>
+  </div>
+  <div class="page-content">
+    <div class="pgw">
+      <div class="card">
+        <div class="card-body">
+          <div class="cal-nav">
+            <button class="btn bsm bs" style="width:36px;padding:0" onclick="calPrev()">&#8249;</button>
+            <div class="cal-month" id="cal-label"></div>
+            <button class="btn bsm bs" style="width:36px;padding:0" onclick="calNext()">&#8250;</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+      <div id="cal-events"></div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="ni"><span class="ni-icon">&#128196;</span>Inspect</a>
+    <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
+    <a href="calendar.html" class="ni active"><span class="ni-icon">&#128197;</span>Calendar</a>
+    <a href="settings.html" class="ni"><span class="ni-icon">&#9881;</span>Settings</a>
+  </nav>
+</div>
+<div id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script>
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+let cY,cM,cSel;
+function initCal(){const n=new Date();cY=n.getFullYear();cM=n.getMonth();cSel=n.toISOString().slice(0,10);}
+function calPrev(){cM--;if(cM<0){cM=11;cY--;}renderCal();}
+function calNext(){cM++;if(cM>11){cM=0;cY++;}renderCal();}
+function renderCal(){
+  document.getElementById('cal-label').textContent=MONTHS[cM]+' '+cY;
+  const today=new Date().toISOString().slice(0,10);
+  const ev={};VA.db.projects.forEach(p=>{if(p.date){if(!ev[p.date])ev[p.date]=[];ev[p.date].push(p);}});
+  const first=new Date(cY,cM,1).getDay(),dim=new Date(cY,cM+1,0).getDate(),prev=new Date(cY,cM,0).getDate();
+  let h=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-dl">${d}</div>`).join('');
+  for(let i=0;i<first;i++)h+=`<div class="cal-day other-month"><span class="dn">${prev-first+i+1}</span></div>`;
+  for(let d=1;d<=dim;d++){
+    const iso=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cnt=ev[iso]?ev[iso].length:0;
+    h+=`<div class="cal-day${iso===today?' today':''}${iso===cSel?' selected':''}${cnt?' has-events':''}" data-iso="${iso}" onclick="calSel('${iso}')">
+      <span class="dn">${d}</span>
+      ${cnt?`<span style="font-size:9px;font-weight:700;color:var(--gd);margin-top:1px;line-height:1">${cnt}</span>`:''}
+    </div>`;
+  }
+  const rem=(7-(first+dim)%7)%7;for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month"><span class="dn">${i}</span></div>`;
+  document.getElementById('cal-grid').innerHTML=h;
+  renderEvs(cSel);
+}
+function calSel(iso) {
+  cSel = iso;
+  // Update selected state without rebuilding the full grid
+  document.querySelectorAll('.cal-day').forEach(el => {
+    el.classList.toggle('selected', el.dataset.iso === iso);
+  });
+  renderEvs(iso);
+}
+function renderEvs(date){
+  const el=document.getElementById('cal-events');
+  const pj=VA.db.projects.filter(p=>p.date===date);
+  if(!pj.length){el.innerHTML=`<p style="font-size:13px;color:var(--txmt);padding:7px 3px">No inspections on ${VA.fmtDateLong(date)}.</p>`;return;}
+  el.innerHTML=`<div class="sh mt8"><h2>Inspections — ${VA.fmtDateLong(date)}</h2></div>`+
+    pj.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
+      <div class="ev-time">${p.time||'Time not set'} &bull; ${VA.esc(p.ptype||'Property')}</div>
+      <div class="ev-title">${VA.esc(p.addr||'Untitled')}</div>
+      <div class="ev-sub">${p.valuer?'Valuer: '+VA.esc(p.valuer):''}${p.cond?' &bull; '+VA.esc(p.cond):''}</div>
+    </div>`).join('');
+}
+pageInit();initCal();renderCal();
+</script>
+</body>
+</html>

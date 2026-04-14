@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid — Travel</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="logo">ValueAid <span>Travel Log</span></a>
+    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+  </header>
+  <div id="travel-banner" class="travel-banner">
+    <div class="pulse"></div>
+    <span id="banner-txt" style="flex:1;font-size:13px">Travel in progress...</span>
+    <button class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:6px 12px" onclick="openEndTravel()">End Trip</button>
+  </div>
+  <div class="page-content">
+    <div class="pgw">
+      <div class="sh mt12"><h2>Travel Log</h2></div>
+      <div id="travel-list"></div>
+    </div>
+  </div>
+  <button class="fab" onclick="openStartTravel()" title="Log Trip">&#43;</button>
+  <nav class="bottom-nav">
+    <a href="index.html" class="ni"><span class="ni-icon">&#128196;</span>Inspect</a>
+    <a href="travel.html" class="ni active"><span class="ni-icon">&#128663;</span>Travel</a>
+    <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
+    <a href="settings.html" class="ni"><span class="ni-icon">&#9881;</span>Settings</a>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<!-- ─── START TRAVEL ─────────────────────────────────────────── -->
+<div class="overlay" id="ov-start">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-start')">&#10005;</button>
+      <h3>Log New Trip</h3>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="fl">From</label>
+        <div class="loc-wrap"><input type="text" id="s-from" placeholder="Departure location">
+          <button class="drop-btn" onclick="toggleLocDrop('s-from','lo-sfrom')">&#9660;</button>
+          <div class="loc-opts" id="lo-sfrom"></div></div>
+      </div>
+      <div class="fg"><label class="fl">To (optional)</label>
+        <div class="loc-wrap"><input type="text" id="s-to" placeholder="Destination">
+          <button class="drop-btn" onclick="toggleLocDrop('s-to','lo-sto')">&#9660;</button>
+          <div class="loc-opts" id="lo-sto"></div></div>
+      </div>
+      <div class="fg"><label class="fl">Travel Method(s)</label><div class="mchk-grid" id="methods-start"></div></div>
+      <!-- Driving: distance (shown at start) -->
+      <div class="fg" id="dist-row" style="display:none">
+        <label class="fl">Distance (km)</label>
+        <input type="number" id="s-dist" min="0" step="0.1" placeholder="e.g. 12.5">
+      </div>
+      <div class="fg"><label class="fl">Notes (optional)</label><textarea id="s-notes" rows="2" placeholder="Any extra notes..."></textarea></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-start')">Cancel</button>
+      <button class="btn bp" style="flex:1" onclick="startTrip()">Start Trip &amp; Record Time</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── END TRAVEL ───────────────────────────────────────────── -->
+<div class="overlay" id="ov-end">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-end')">&#10005;</button>
+      <h3>End Trip</h3>
+    </div>
+    <div class="sheet-body">
+      <div id="end-summary" style="background:var(--sf2);border-radius:var(--r);padding:11px;margin-bottom:12px;font-size:13px;color:var(--txm)"></div>
+      <div class="fg"><label class="fl">Arrived At</label>
+        <div class="loc-wrap"><input type="text" id="e-dest" placeholder="Destination">
+          <button class="drop-btn" onclick="toggleLocDrop('e-dest','lo-edest')">&#9660;</button>
+          <div class="loc-opts" id="lo-edest"></div></div>
+      </div>
+      <!-- Driving: parking (end only) -->
+      <div class="fg" id="park-row" style="display:none">
+        <label class="fl">Parking</label>
+        <div class="mchk" id="park-chip" onclick="this.classList.toggle('on')">&#128663; Has Parking</div>
+      </div>
+      <!-- Driving: ERP (end only) -->
+      <div class="fg" id="erp-row" style="display:none">
+        <label class="fl">ERP Charges (S$)</label>
+        <input type="number" id="e-erp" min="0" step="0.50" placeholder="e.g. 2.50">
+      </div>
+      <!-- Taxi/Grab: fare (end only) -->
+      <div class="fg" id="taxi-row" style="display:none">
+        <label class="fl">Taxi / Grab Fare (S$)</label>
+        <input type="number" id="e-taxi" min="0" step="0.10" placeholder="e.g. 14.80">
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-end')">Cancel</button>
+      <button class="btn bp" style="flex:1" onclick="endTrip()">End Trip &amp; Record Time</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── EDIT TRAVEL ──────────────────────────────────────────── -->
+<div class="overlay" id="ov-edit">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-edit')">&#10005;</button>
+      <h3>Edit Trip</h3>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="fl">From</label>
+        <div class="loc-wrap"><input type="text" id="et-from" placeholder="Departure">
+          <button class="drop-btn" onclick="toggleLocDrop('et-from','lo-etfrom')">&#9660;</button>
+          <div class="loc-opts" id="lo-etfrom"></div></div>
+      </div>
+      <div class="fg"><label class="fl">To</label>
+        <div class="loc-wrap"><input type="text" id="et-to" placeholder="Destination">
+          <button class="drop-btn" onclick="toggleLocDrop('et-to','lo-etto')">&#9660;</button>
+          <div class="loc-opts" id="lo-etto"></div></div>
+      </div>
+      <div class="fg"><label class="fl">Date</label><input type="date" id="et-date"></div>
+      <div class="r2">
+        <div class="fg"><label class="fl">Start Time</label><input type="time" id="et-start"></div>
+        <div class="fg"><label class="fl">End Time</label><input type="time" id="et-end"></div>
+      </div>
+      <div class="fg"><label class="fl">Travel Method(s)</label><div class="mchk-grid" id="methods-edit"></div></div>
+      <!-- Driving fields -->
+      <div class="fg" id="edist-row" style="display:none">
+        <label class="fl">Distance (km)</label>
+        <input type="number" id="et-dist" min="0" step="0.1" placeholder="e.g. 12.5">
+      </div>
+      <div class="fg" id="epark-row" style="display:none">
+        <label class="fl">Parking</label>
+        <div class="mchk" id="epark-chip" onclick="this.classList.toggle('on')">&#128663; Has Parking</div>
+      </div>
+      <div class="fg" id="eerp-row" style="display:none">
+        <label class="fl">ERP Charges (S$)</label>
+        <input type="number" id="et-erp" min="0" step="0.50" placeholder="e.g. 2.50">
+      </div>
+      <!-- Taxi fields -->
+      <div class="fg" id="etaxi-row" style="display:none">
+        <label class="fl">Taxi / Grab Fare (S$)</label>
+        <input type="number" id="et-taxi" min="0" step="0.10" placeholder="e.g. 14.80">
+      </div>
+      <div class="fg"><label class="fl">Notes</label><textarea id="et-notes" rows="2"></textarea></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-edit')">Cancel</button>
+      <button class="btn bp" style="flex:1" onclick="saveEditTrip()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script>
+let editingTripId = null;
+
+// ─── RENDER ────────────────────────────────────────────────────
+function renderTravels() {
+  const el = document.getElementById('travel-list');
+  const ip = VA.db.travels.filter(t=>!t.endTime);
+  const done = VA.db.travels.filter(t=>t.endTime).sort((a,b)=>new Date(b.endTime)-new Date(a.endTime));
+  if (!ip.length&&!done.length) {
+    el.innerHTML='<div class="empty-state"><div class="esi">&#128663;</div><h3>No trips logged</h3><p>Tap + to start recording your travel.</p></div>';
+    return;
+  }
+  let h='';
+  ip.forEach(t=>h+=buildCard(t,true));
+  const gr={};done.forEach(t=>{const d=t.date||t.endTime?.slice(0,10)||'?';if(!gr[d])gr[d]=[];gr[d].push(t);});
+  Object.keys(gr).sort((a,b)=>new Date(b)-new Date(a)).forEach(d=>{
+    h+=`<div class="date-grp">${VA.fmtDateLong(d)}</div>`;
+    gr[d].forEach(t=>h+=buildCard(t,false));
+  });
+  el.innerHTML=h;
+}
+
+function buildCard(t, active) {
+  const dur = t.endTime&&t.startTime ? getDur(t.startTime,t.endTime) : '';
+  const st = t.startTime ? VA.fmtTime(new Date(t.startTime)) : '?';
+  const et = t.endTime ? VA.fmtTime(new Date(t.endTime)) : null;
+  const extras = [];
+  if (t.hasParking) extras.push('<span class="method-badge" style="background:var(--gnbg);color:var(--gn)">&#128663; Parking</span>');
+  if (t.hasERP) extras.push(`<span class="method-badge" style="background:var(--rdbg);color:var(--rd)">ERP S$${(+(t.erpAmt||0)||0).toFixed(2)}</span>`);
+  if (t.taxiFare) extras.push(`<span class="method-badge" style="background:var(--ambg);color:var(--am)">&#128664; S$${(+(t.taxiFare||0)||0).toFixed(2)}</span>`);
+  if (t.distKm) extras.push(`<span class="method-badge">${(+(t.distKm||0)||0).toFixed(1)} km</span>`);
+  return `<div class="travel-card">
+    <div class="tc-hdr"${active?' style="background:var(--ambg)"':''}>
+      <div class="tc-route">
+        <div class="tc-ft">${VA.esc(t.from||'?')}<span class="tc-arr">&#8594;</span>${VA.esc(t.to||'In progress...')}</div>
+        <div class="tc-time">${st}${et?' — '+et:' (ongoing)'}${dur?' &bull; '+dur:''}</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        ${active?`<button class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:5px 10px" onclick="openEndTravel()">End</button>`:''}
+        <button class="btn bxs bs" onclick="openEditTrip('${t.id}')">Edit</button>
+        ${!active?`<button class="btn bxs brd" onclick="delTrip('${t.id}')">&#10005;</button>`:''}
+      </div>
+    </div>
+    ${(t.methods&&t.methods.length)||extras.length?`<div class="tc-methods">${(t.methods||[]).map(m=>`<span class="method-badge">${VA.esc(m)}</span>`).join('')}${extras.join('')}</div>`:''}
+    ${t.notes?`<div style="padding:0 12px 9px;font-size:12px;color:var(--txmt)">${VA.esc(t.notes)}</div>`:''}
+  </div>`;
+}
+
+function getDur(s,e){const ms=new Date(e)-new Date(s);const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return h?h+'h '+m+'m':m+'m';}
+
+// ─── START ─────────────────────────────────────────────────────
+function openStartTravel() {
+  buildMethodChecks('methods-start', [], 'start');
+  ['s-from','s-to','s-notes','s-dist'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  openOv('ov-start');
+}
+function startTrip() {
+  const from=document.getElementById('s-from').value.trim();
+  if(!from){toast('Please enter a departure location');return;}
+  const meths=getSelectedMethods('methods-start');
+  const now=new Date();
+  const t={
+    id:VA.uid(),from,
+    to:document.getElementById('s-to').value.trim(),
+    methods:meths,
+    distKm:document.getElementById('s-dist').value||'',
+    notes:document.getElementById('s-notes').value.trim(),
+    startTime:now.toISOString(),endTime:null,
+    date:now.toISOString().slice(0,10),
+    hasParking:false,hasERP:false,erpAmt:'',taxiFare:''
+  };
+  VA.db.travels.push(t);VA.save();closeOv('ov-start');updateBanner();renderTravels();toast('Trip started: '+VA.fmtTime(now));
+}
+
+// ─── END ───────────────────────────────────────────────────────
+function openEndTravel() {
+  const trip=VA.db.travels.find(t=>!t.endTime);if(!trip)return;
+  const isDriving=(trip.methods||[]).includes('Driving');
+  const isTaxi=(trip.methods||[]).includes('Taxi / Grab');
+  document.getElementById('end-summary').innerHTML=
+    `<b>From:</b> ${VA.esc(trip.from)}<br><b>Started:</b> ${VA.fmtTime(new Date(trip.startTime))}<br><b>Methods:</b> ${trip.methods.join(', ')||'—'}`;
+  document.getElementById('e-dest').value='';
+  // Show/hide end-specific fields based on methods
+  document.getElementById('park-row').style.display=isDriving?'block':'none';
+  document.getElementById('erp-row').style.display=isDriving?'block':'none';
+  document.getElementById('taxi-row').style.display=isTaxi?'block':'none';
+  const pc=document.getElementById('park-chip');if(pc)pc.classList.remove('on');
+  ['e-erp','e-taxi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  openOv('ov-end');
+}
+function endTrip() {
+  const trip=VA.db.travels.find(t=>!t.endTime);if(!trip)return;
+  const now=new Date();
+  trip.endTime=now.toISOString();
+  trip.to=document.getElementById('e-dest').value.trim()||trip.to;
+  trip.date=now.toISOString().slice(0,10);
+  trip.hasParking=document.getElementById('park-chip')?.classList.contains('on')||false;
+  trip.hasERP=!!(document.getElementById('e-erp')?.value);
+  trip.erpAmt=document.getElementById('e-erp')?.value||'';
+  trip.taxiFare=document.getElementById('e-taxi')?.value||'';
+  VA.save();closeOv('ov-end');updateBanner();renderTravels();toast('Trip ended: '+VA.fmtTime(now));
+}
+
+// ─── EDIT ──────────────────────────────────────────────────────
+function openEditTrip(id) {
+  editingTripId=id;
+  const t=VA.db.travels.find(x=>x.id===id);if(!t)return;
+  document.getElementById('et-from').value=t.from||'';
+  document.getElementById('et-to').value=t.to||'';
+  document.getElementById('et-notes').value=t.notes||'';
+  document.getElementById('et-date').value=t.date||'';
+  document.getElementById('et-dist').value=t.distKm||'';
+  document.getElementById('et-erp').value=t.erpAmt||'';
+  document.getElementById('et-taxi').value=t.taxiFare||'';
+  if(t.startTime)document.getElementById('et-start').value=VA.fmtTime(new Date(t.startTime));
+  else document.getElementById('et-start').value='';
+  if(t.endTime)document.getElementById('et-end').value=VA.fmtTime(new Date(t.endTime));
+  else document.getElementById('et-end').value='';
+  buildMethodChecks('methods-edit', t.methods||[], 'edit');
+  const epc=document.getElementById('epark-chip');if(epc)epc.classList.toggle('on',!!t.hasParking);
+  openOv('ov-edit');
+}
+function saveEditTrip() {
+  const t=VA.db.travels.find(x=>x.id===editingTripId);if(!t)return;
+  t.from=document.getElementById('et-from').value.trim()||t.from;
+  t.to=document.getElementById('et-to').value.trim();
+  t.notes=document.getElementById('et-notes').value.trim();
+  t.methods=getSelectedMethods('methods-edit');
+  t.distKm=document.getElementById('et-dist').value||'';
+  t.hasParking=document.getElementById('epark-chip')?.classList.contains('on')||false;
+  t.erpAmt=document.getElementById('et-erp').value||'';
+  t.hasERP=!!t.erpAmt;
+  t.taxiFare=document.getElementById('et-taxi').value||'';
+  const dt=document.getElementById('et-date').value;if(dt)t.date=dt;
+  const st=document.getElementById('et-start').value;
+  const et=document.getElementById('et-end').value;
+  if(st&&t.date){try{t.startTime=new Date(t.date+'T'+st+':00').toISOString();}catch(e){}}
+  if(et&&t.date){try{t.endTime=new Date(t.date+'T'+et+':00').toISOString();}catch(e){}}
+  // Only clear endTime if the trip was already in-progress (never completed)
+  // Prevent accidental clearing of a completed trip's end time
+  else if(!et && !t.endTime) t.endTime=null;
+  VA.save();closeOv('ov-edit');updateBanner();renderTravels();toast('Trip updated');
+}
+function delTrip(id){if(!confirm('Delete this trip?'))return;VA.db.travels=VA.db.travels.filter(t=>t.id!==id);VA.save();updateBanner();renderTravels();}
+
+pageInit();
+renderTravels();
+</script>
+</body>
+</html>

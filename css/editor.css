@@ -1,0 +1,41 @@
+/* ── Flat section cards ───────────────────────────────────────── */
+.flat-sec{margin-bottom:10px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl)}
+.flat-hdr{display:flex;align-items:center;padding:11px 12px;gap:6px;background:var(--sf2);border-radius:var(--rl) var(--rl) 0 0}
+.flat-hdr h4{flex:1;font-size:14px;font-weight:600;margin:0}
+.flat-body{padding:10px 12px}
+.sel-preview{display:flex;flex-wrap:wrap;gap:5px;min-height:20px;margin-bottom:4px}
+.sel-tag{background:var(--blbg);color:var(--bl);border-radius:12px;padding:3px 9px;font-size:12px;font-weight:500;line-height:1.4}
+.note-tag{background:var(--ambg);color:var(--am);border-radius:8px;padding:3px 9px;font-size:12px;font-weight:500;line-height:1.5;cursor:pointer;word-break:break-word;white-space:normal;max-width:100%;display:inline-block;margin-top:4px}
+
+/* ── Unit cards (per-unit layout) ────────────────────────────── */
+.unit-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:8px;overflow:hidden}
+.unit-hdr{display:flex;align-items:center;padding:11px 12px;gap:8px;background:var(--sf2);user-select:none;border-radius:var(--rl) var(--rl) 0 0}
+.unit-hdr h4{flex:1;font-size:14px;font-weight:600}
+.unit-preview{padding:6px 12px;border-top:1px solid var(--bd);font-size:11px;color:var(--txmt);line-height:1.7}
+.unit-preview b{color:var(--txm);font-weight:600}
+.unit-body{padding:10px 12px;border-top:1px solid var(--bd);display:none}
+.unit-body.open{display:block}
+
+/* ── Camera tagger ───────────────────────────────────────────── */
+.cam-step{margin-bottom:14px}
+.cam-step-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txmt);margin-bottom:6px}
+.cam-tag-grid{display:flex;flex-wrap:wrap;gap:6px}
+.cam-tag{padding:7px 12px;border-radius:18px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font-size:13px;cursor:pointer;user-select:none;transition:all var(--tr,0.18s)}
+.cam-tag.on{background:var(--nv);color:#fff;border-color:var(--nv)}
+.cam-tag.cat-on{background:var(--gnbg);color:var(--gn);border-color:var(--gn)}
+.cam-preview-bar{background:var(--sf2);border-radius:var(--r,10px);padding:10px 12px;margin:10px 0;font-size:12px;color:var(--txmt);word-break:break-all;min-height:36px;line-height:1.5}
+.cam-preview-bar b{color:var(--tx);font-size:13px}
+.cam-sticky-banner{background:var(--blbg);border-radius:var(--r,10px);padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--bl);display:flex;align-items:center;gap:8px}
+
+/* ── Reorder buttons ─────────────────────────────────────────── */
+.ord-btn{width:22px;height:22px;border:1px solid var(--bd);background:var(--sf);border-radius:4px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0;color:var(--tx)}
+.ord-btn:active{background:var(--sf2)}
+.ord-btn:disabled{opacity:.3;cursor:default}
+
+/* ── Category ⋮ context menu ─────────────────────────────────── */
+.cat-menu{position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);z-index:300;min-width:180px;padding:4px 0;display:none}
+.cat-menu.open{display:block}
+.cat-menu-item{padding:11px 14px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--tx)}
+.cat-menu-item:active{background:var(--sf2)}
+.cat-menu-item.danger{color:var(--rd)}
+.cat-hdr-wrap{position:relative}

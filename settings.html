@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid — Settings</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.ord-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);gap:8px}
+.ord-row:last-child{border-bottom:none}
+.ord-name{flex:1;font-size:14px}
+.ord-btns{display:flex;gap:4px;flex-shrink:0}
+.ord-btn{width:28px;height:28px;border:1px solid var(--bd);background:var(--sf);border-radius:4px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;color:var(--tx)}
+.ord-btn:active{background:var(--sf2)}
+.ord-btn:disabled{opacity:.3;cursor:default}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="logo">ValueAid <span>Settings</span></a>
+    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+  </header>
+  <div id="travel-banner" class="travel-banner">
+    <div class="pulse"></div>
+    <span id="banner-txt" style="flex:1;font-size:13px">Travel in progress...</span>
+    <a href="travel.html" class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:6px 12px">View</a>
+  </div>
+  <div class="page-content">
+    <div class="pgw mt12">
+
+      <!-- STORAGE WARNING -->
+      <div id="storage-notice" style="display:none;background:var(--ambg);border:1px solid var(--am);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:18px;flex-shrink:0">&#9888;&#65039;</span>
+          <div style="flex:1">
+            <p style="font-size:13px;font-weight:600;color:var(--am);margin-bottom:4px">Data stored in your browser</p>
+            <p style="font-size:12px;color:var(--am);line-height:1.5">All data lives in browser local storage. Clearing browser data will <b>permanently delete everything.</b> Export regularly.</p>
+          </div>
+          <button onclick="dismissNotice()" style="background:none;border:none;color:var(--am);cursor:pointer;font-size:18px;padding:0;flex-shrink:0">&#10005;</button>
+        </div>
+      </div>
+
+      <!-- APPEARANCE -->
+      <div class="card mb12">
+        <div class="s-row" onclick="toggleTheme()">
+          <div class="s-icon" style="background:var(--sf2)">&#9680;</div>
+          <div class="s-label">Dark Mode</div>
+          <button class="toggle" id="dark-toggle"></button>
+        </div>
+      </div>
+
+      <!-- ── INSPECTION SETUP ──────────────────────────────── -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Inspection Setup</div>
+      <div style="background:var(--blbg);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--bl);line-height:1.6">
+        <b>Categories</b> hold your inspection items. <b>Room lists</b> hold your space names. <b>Templates</b> combine both into a starting point for new projects.
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Categories</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <button class="btn bp bsm mb8" onclick="openAddCategory()">+ Add Category</button>
+          <div id="cat-list"></div>
+        </div>
+      </div>
+
+      <!-- ROOM LISTS -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Room Lists</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <button class="btn bp bsm mb8" onclick="openAddRoomList()">+ Add Room List</button>
+          <div id="rl-list"></div>
+        </div>
+      </div>
+
+      <!-- INSPECTION TEMPLATES -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Templates</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+            <select id="tpl-select" style="flex:1" onchange="loadTplEditor()"></select>
+            <button class="btn bp bsm" onclick="newTemplate()">+ New</button>
+          </div>
+          <div id="template-editor"></div>
+          <div class="divider"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn bs bsm" onclick="exportTpls()">Export</button>
+            <button class="btn bs bsm" onclick="document.getElementById('tpl-imp').click()">Import</button>
+            <input type="file" id="tpl-imp" accept=".json" style="display:none" onchange="importTpls(this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GENERAL ────────────────────────────────────────── -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">General</div>
+
+      <!-- VALUERS -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Valuers</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input type="text" id="new-valuer" placeholder="Valuer name" style="flex:1">
+            <button class="btn bp bsm" onclick="addValuer()">Add</button>
+          </div>
+          <div id="valuers-list"></div>
+        </div>
+      </div>
+
+      <!-- PROPERTY TYPES -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Property Types</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input type="text" id="new-ptype" placeholder="e.g. Commercial" style="flex:1">
+            <button class="btn bp bsm" onclick="addPropType()">Add</button>
+          </div>
+          <div id="ptypes-list"></div>
+        </div>
+      </div>
+
+      <!-- LEVEL / FLOOR NAMES -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Level / Floor Names</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <p class="hint mb8">Available when adding accommodation levels to a project.</p>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input type="text" id="new-level" placeholder="e.g. Basement 1" style="flex:1">
+            <button class="btn bp bsm" onclick="addLevelName()">Add</button>
+          </div>
+          <div id="levelnames-list"></div>
+        </div>
+      </div>
+
+      <!-- SAVED LOCATIONS -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Saved Locations</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <p class="hint mb8">Appear in travel log location dropdowns.</p>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input type="text" id="new-loc" placeholder="e.g. Client Office" style="flex:1">
+            <button class="btn bp bsm" onclick="addSavedLoc()">Add</button>
+          </div>
+          <div id="savedlocs-list"></div>
+        </div>
+      </div>
+
+      <!-- ── DATA ───────────────────────────────────────────── -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Data</div>
+
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Export &amp; Import</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <div style="background:var(--ambg);border-radius:var(--rs);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--am);line-height:1.5">
+            &#9888;&#65039; <b>Browser storage only.</b> Clearing browser cache deletes all data. Export regularly.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn bs bsm" onclick="exportAllData()">&#8593; Export All Data</button>
+            <button class="btn bs bsm" onclick="document.getElementById('imp-data').click()">&#8595; Import Data</button>
+            <input type="file" id="imp-data" accept=".json" style="display:none" onchange="importAllData(this)">
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px">ValueAid &bull; Property Valuer Toolkit</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="ni"><span class="ni-icon">&#128196;</span>Inspect</a>
+    <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
+    <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
+    <a href="settings.html" class="ni active"><span class="ni-icon">&#9881;</span>Settings</a>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<!-- ADD CATEGORY CHOICE -->
+<div class="overlay center" id="ov-add-cat">
+  <div class="modal-box" style="max-width:340px">
+    <h3>Add Category</h3>
+    <p>How would you like to create this category?</p>
+    <div class="modal-footer" style="flex-direction:column;gap:8px">
+      <button class="btn bp bbl" onclick="startCatFrom('scratch')">From Scratch</button>
+      <button class="btn bs bbl" onclick="startCatFrom('builtin')">Start from Built-in List</button>
+      <button class="btn bs bbl" onclick="startCatFrom('existing')">Copy from Existing</button>
+      <button class="btn bs bbl" onclick="closeOv('ov-add-cat')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY EDITOR -->
+<div class="overlay" id="ov-cat-edit">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-cat-edit')">&#10005;</button>
+      <h3 id="cat-edit-title">Edit Category</h3>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="fl">Category Name</label><input type="text" id="cat-edit-name" placeholder="e.g. Exterior Walls"></div>
+      <div class="sectlbl mt8">Items</div>
+      <div id="cat-edit-items" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="cat-edit-item-inp" placeholder="Add item..." style="flex:1">
+        <button class="btn bp bsm" onclick="catEditorAddItem()">Add</button>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-cat-edit')">Cancel</button>
+      <button class="btn bp" style="flex:1" id="cat-edit-save-btn" onclick="saveCatEditor()">Save Category</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNIFIED PICKER -->
+<div class="overlay" id="va-picker-ov">
+  <div class="sheet" style="display:flex;flex-direction:column;max-height:88vh">
+    <div id="va-pk-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px"></div>
+    <div style="flex-shrink:0;padding:12px 16px;border-top:1px solid var(--bd);background:var(--sf)">
+      <div id="va-pk-custom-row" style="display:none;gap:6px;margin-bottom:8px">
+        <input type="text" id="va-pk-custom-inp" placeholder="Add custom..." style="flex:1">
+        <button class="btn bp bsm" onclick="VA_PICKER.addCustom()">Add</button>
+      </div>
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="va-pk-search" placeholder="Search..." style="padding-left:32px"
+               oninput="VA_PICKER._onSearch(this.value)">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span id="va-pk-title" style="font-size:15px;font-weight:600"></span>
+        <button class="btn bp bsm" id="va-pk-done">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ROOM LIST CHOICE -->
+<div class="overlay center" id="ov-add-rl">
+  <div class="modal-box" style="max-width:340px">
+    <h3>Add Room List</h3>
+    <p>How would you like to create this room list?</p>
+    <div class="modal-footer" style="flex-direction:column;gap:8px">
+      <button class="btn bp bbl" onclick="startRLFrom('scratch')">From Scratch</button>
+      <button class="btn bs bbl" onclick="startRLFrom('builtin')">Start from Built-in List</button>
+      <button class="btn bs bbl" onclick="startRLFrom('existing')">Copy from Existing</button>
+      <button class="btn bs bbl" onclick="closeOv('ov-add-rl')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROOM LIST EDITOR -->
+<div class="overlay" id="ov-rl-edit">
+  <div class="sheet">
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('ov-rl-edit')">&#10005;</button>
+      <h3 id="rl-edit-title">Edit Room List</h3>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="fl">List Name</label><input type="text" id="rl-edit-name" placeholder="e.g. HDB Rooms"></div>
+      <div class="sectlbl mt8">Rooms</div>
+      <div id="rl-edit-items" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="rl-edit-room-inp" placeholder="Add room..." style="flex:1">
+        <button class="btn bp bsm" onclick="rlEditorAddRoom()">Add</button>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('ov-rl-edit')">Cancel</button>
+      <button class="btn bp" style="flex:1" id="rl-edit-save-btn" onclick="saveRLEditor()">Save Room List</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM with detail -->
+<div class="overlay center" id="ov-confirm">
+  <div class="modal-box">
+    <h3 id="conf-title">Confirm</h3>
+    <p id="conf-msg" style="white-space:pre-wrap"></p>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeOv('ov-confirm')">Cancel</button>
+      <button class="btn brd" id="conf-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script>
+// ── Simple lists ────────────────────────────────────────────────
+function renderSimple(cid, items, removeFn) {
+  const el = document.getElementById(cid); if (!el) return;
+  el.innerHTML = '';
+  if (!items.length) { el.innerHTML = '<p class="hint">None added yet.</p>'; return; }
+  items.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'ord-row';
+    const sp = document.createElement('span'); sp.className = 'ord-name'; sp.textContent = item;
+    const btn = document.createElement('button'); btn.className = 'btn bxs brd'; btn.textContent = 'Remove';
+    btn.addEventListener('click', () => { removeFn(i); renderAllLists(); });
+    row.appendChild(sp); row.appendChild(btn); el.appendChild(row);
+  });
+}
+function renderAllLists() {
+  renderSimple('valuers-list', VA.db.valuers, i=>{ VA.db.valuers.splice(i,1); VA.save(); });
+  renderSimple('ptypes-list', VA.db.propertyTypes, i=>{ VA.db.propertyTypes.splice(i,1); VA.save(); });
+  renderSimple('levelnames-list', VA.db.levelNames, i=>{ VA.db.levelNames.splice(i,1); VA.save(); });
+  renderSimple('savedlocs-list', VA.db.savedLocations, i=>{ VA.db.savedLocations.splice(i,1); VA.save(); });
+}
+function addValuer(){const v=document.getElementById('new-valuer').value.trim();if(!v)return;if(!VA.db.valuers.includes(v)){VA.db.valuers.push(v);VA.save();}renderAllLists();document.getElementById('new-valuer').value='';}
+function addPropType(){const v=document.getElementById('new-ptype').value.trim();if(!v)return;if(!VA.db.propertyTypes.includes(v)){VA.db.propertyTypes.push(v);VA.save();}renderAllLists();document.getElementById('new-ptype').value='';}
+function addLevelName(){const v=document.getElementById('new-level').value.trim();if(!v)return;if(!VA.db.levelNames.includes(v)){VA.db.levelNames.push(v);VA.save();}renderAllLists();document.getElementById('new-level').value='';}
+function addSavedLoc(){const v=document.getElementById('new-loc').value.trim();if(!v)return;if(!VA.db.savedLocations.includes(v)){VA.db.savedLocations.push(v);VA.save();}renderAllLists();document.getElementById('new-loc').value='';}
+
+// ══════════════════════════════════════════════════════════════
+//  CATEGORY MANAGER
+// ══════════════════════════════════════════════════════════════
+let _catEditId = null; // null = new
+
+function renderCatList() {
+  const el = document.getElementById('cat-list'); if (!el) return;
+  const cats = VA.activeCats();
+  if (!cats.length) { el.innerHTML = '<p class="hint">No categories yet.</p>'; return; }
+  el.innerHTML = '';
+  cats.forEach((cat, i) => {
+    const row = document.createElement('div');
+    row.className = 'ord-row';
+    const sp = document.createElement('span'); sp.className = 'ord-name';
+    sp.innerHTML = `<b style="font-size:14px">${VA.esc(cat.name)}</b> <span style="font-size:11px;color:var(--txmt)">${cat.items.length} items</span>`;
+    const btns = document.createElement('div'); btns.className = 'ord-btns';
+    // up/down
+    const upB = document.createElement('button'); upB.className='ord-btn'; upB.textContent='↑'; upB.disabled = i===0;
+    upB.addEventListener('click', ()=>{ moveCat(i,-1); });
+    const dnB = document.createElement('button'); dnB.className='ord-btn'; dnB.textContent='↓'; dnB.disabled = i===cats.length-1;
+    dnB.addEventListener('click', ()=>{ moveCat(i,1); });
+    // edit
+    const edB = document.createElement('button'); edB.className='btn bxs bs'; edB.textContent='Edit';
+    edB.addEventListener('click', ()=>{ openCatEdit(cat.id); });
+    // delete
+    const dlB = document.createElement('button'); dlB.className='btn bxs brd'; dlB.textContent='Delete';
+    dlB.addEventListener('click', ()=>{ deleteCat(cat.id); });
+    btns.appendChild(upB); btns.appendChild(dnB); btns.appendChild(edB); btns.appendChild(dlB);
+    row.appendChild(sp); row.appendChild(btns); el.appendChild(row);
+  });
+}
+
+function moveCat(i, dir) {
+  const cats = VA.activeCats();
+  const allCats = VA.db.categories;
+  // find actual indices in full array
+  const aIdx = allCats.indexOf(cats[i]);
+  const bIdx = allCats.indexOf(cats[i+dir]);
+  if (aIdx<0||bIdx<0) return;
+  [allCats[aIdx], allCats[bIdx]] = [allCats[bIdx], allCats[aIdx]];
+  VA.save(); renderCatList();
+}
+
+function deleteCat(id) {
+  const cat = VA.catById(id); if (!cat) return;
+  const usingTpls = VA.db.templates.filter(t=>(t.categoryIds||[]).includes(id)).map(t=>t.name);
+  let msg = `Delete "${cat.name}"?\n\nExisting projects are unaffected.`;
+  if (usingTpls.length) msg += `\n\nThis category is used in template(s): ${usingTpls.join(', ')}.\nIt will be removed from those templates.`;
+  document.getElementById('conf-title').textContent = 'Delete Category';
+  document.getElementById('conf-msg').textContent = msg;
+  document.getElementById('conf-ok').onclick = () => {
+    cat.deleted = true;
+    VA.db.templates.forEach(t => {
+      t.categoryIds = (t.categoryIds||[]).filter(cid=>cid!==id);
+    });
+    VA.save(); closeOv('ov-confirm'); renderCatList(); populateTplSelect(); loadTplEditor();
+  };
+  openOv('ov-confirm');
+}
+
+// ── Add category flow ─────────────────────────────────────────
+function openAddCategory() { openOv('ov-add-cat'); }
+
+function startCatFrom(mode) {
+  closeOv('ov-add-cat');
+  if (mode === 'scratch') {
+    openCatEdit(null, { name:'', items:[] });
+  } else if (mode === 'builtin') {
+    openPickerSheet('Choose Built-in Category', VA.BUILTIN_CATS.map(c=>c.name), (name) => {
+      const src = VA.BUILTIN_CATS.find(c=>c.name===name);
+      if (src) openCatEdit(null, { name: src.name, items: [...src.items] });
+    });
+  } else if (mode === 'existing') {
+    const cats = VA.activeCats();
+    if (!cats.length) { toast('No existing categories to copy from'); return; }
+    openPickerSheet('Copy from Existing', cats.map(c=>c.name), (name) => {
+      const src = cats.find(c=>c.name===name);
+      if (src) openCatEdit(null, { name: src.name + ' (Copy)', items: [...src.items] });
+    });
+  }
+}
+
+// ── Category editor ───────────────────────────────────────────
+let _catEditData = null; // working copy
+
+function openCatEdit(id, prefill) {
+  _catEditId = id;
+  const existing = id ? VA.catById(id) : null;
+  _catEditData = prefill ? { name: prefill.name, items: [...prefill.items] }
+    : { name: existing.name, items: [...existing.items] };
+  document.getElementById('cat-edit-title').textContent = id ? 'Edit Category' : 'New Category';
+  document.getElementById('cat-edit-name').value = _catEditData.name;
+  renderCatEditItems();
+  openOv('ov-cat-edit');
+}
+
+function renderCatEditItems() {
+  const el = document.getElementById('cat-edit-items'); if (!el) return;
+  el.innerHTML = '';
+  (_catEditData.items||[]).forEach((item, i) => {
+    const row = document.createElement('div'); row.className='ord-row';
+    const sp = document.createElement('span'); sp.className='ord-name'; sp.style.fontSize='13px'; sp.textContent=item;
+    const btns = document.createElement('div'); btns.className='ord-btns';
+    const up = document.createElement('button'); up.className='ord-btn'; up.textContent='↑'; up.disabled=i===0;
+    up.addEventListener('click',()=>{ const a=_catEditData.items; [a[i],a[i-1]]=[a[i-1],a[i]]; renderCatEditItems(); });
+    const dn = document.createElement('button'); dn.className='ord-btn'; dn.textContent='↓'; dn.disabled=i===_catEditData.items.length-1;
+    dn.addEventListener('click',()=>{ const a=_catEditData.items; [a[i],a[i+1]]=[a[i+1],a[i]]; renderCatEditItems(); });
+    const rm = document.createElement('button'); rm.className='btn bxs brd'; rm.textContent='✕';
+    rm.addEventListener('click',()=>{ _catEditData.items.splice(i,1); renderCatEditItems(); });
+    btns.appendChild(up); btns.appendChild(dn); btns.appendChild(rm);
+    row.appendChild(sp); row.appendChild(btns); el.appendChild(row);
+  });
+}
+
+function catEditorAddItem() {
+  const inp = document.getElementById('cat-edit-item-inp');
+  const v = (inp?.value||'').trim(); if (!v) return;
+  if (_catEditData.items.includes(v)) { toast('"'+v+'" already exists'); inp.select(); return; }
+  _catEditData.items.push(v); inp.value=''; renderCatEditItems();
+}
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter' && document.activeElement?.id==='cat-edit-item-inp') catEditorAddItem();
+  if (e.key==='Enter' && document.activeElement?.id==='rl-edit-room-inp') rlEditorAddRoom();
+});
+
+function saveCatEditor() {
+  const name = document.getElementById('cat-edit-name').value.trim();
+  if (!name) { toast('Please enter a category name'); return; }
+  // Duplicate name check (ignore self when editing)
+  const duplicate = VA.activeCats().find(c => c.name.toLowerCase()===name.toLowerCase() && c.id!==_catEditId);
+  if (duplicate) { toast('A category named "'+name+'" already exists'); return; }
+  if (_catEditId) {
+    const cat = VA.catById(_catEditId);
+    if (cat) { cat.name = name; cat.items = [..._catEditData.items]; }
+  } else {
+    VA.db.categories.push({ id: VA.uid(), name, items: [..._catEditData.items] });
+  }
+  VA.save(); closeOv('ov-cat-edit'); renderCatList(); loadTplEditor(); toast('Category saved');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROOM LIST MANAGER
+// ══════════════════════════════════════════════════════════════
+let _rlEditId = null;
+let _rlEditData = null;
+
+function renderRLList() {
+  const el = document.getElementById('rl-list'); if (!el) return;
+  const rls = VA.db.roomLists;
+  if (!rls.length) { el.innerHTML = '<p class="hint">No room lists yet.</p>'; return; }
+  el.innerHTML = '';
+  rls.forEach((rl, i) => {
+    const row = document.createElement('div'); row.className='ord-row';
+    const sp = document.createElement('span'); sp.className='ord-name';
+    sp.innerHTML = `<b style="font-size:14px">${VA.esc(rl.name)}</b> <span style="font-size:11px;color:var(--txmt)">${rl.rooms.length} rooms</span>`;
+    const btns = document.createElement('div'); btns.className='ord-btns';
+    const edB = document.createElement('button'); edB.className='btn bxs bs'; edB.textContent='Edit';
+    edB.addEventListener('click',()=>{ openRLEdit(rl.id); });
+    const dlB = document.createElement('button'); dlB.className='btn bxs brd'; dlB.textContent='Delete';
+    dlB.addEventListener('click',()=>{ deleteRL(rl.id); });
+    btns.appendChild(edB); btns.appendChild(dlB);
+    row.appendChild(sp); row.appendChild(btns); el.appendChild(row);
+  });
+}
+
+function deleteRL(id) {
+  const rl = VA.roomListById(id); if (!rl) return;
+  const usingTpls = VA.db.templates.filter(t=>t.roomListId===id).map(t=>t.name);
+  let msg = `Delete "${rl.name}"?\n\nExisting projects are unaffected.`;
+  if (usingTpls.length) msg += `\n\nUsed in template(s): ${usingTpls.join(', ')}. These will fall back to the first available room list.`;
+  document.getElementById('conf-title').textContent = 'Delete Room List';
+  document.getElementById('conf-msg').textContent = msg;
+  document.getElementById('conf-ok').onclick = () => {
+    VA.db.roomLists = VA.db.roomLists.filter(r=>r.id!==id);
+    VA.db.templates.forEach(t=>{ if(t.roomListId===id) t.roomListId = VA.db.roomLists[0]?.id||''; });
+    VA.save(); closeOv('ov-confirm'); renderRLList(); loadTplEditor();
+  };
+  openOv('ov-confirm');
+}
+
+function openAddRoomList() { openOv('ov-add-rl'); }
+
+function startRLFrom(mode) {
+  closeOv('ov-add-rl');
+  if (mode==='scratch') {
+    openRLEdit(null, { name:'', rooms:[] });
+  } else if (mode==='builtin') {
+    openRLEdit(null, { name:'Default Rooms (Copy)', rooms:[...VA.BUILTIN_ROOMS] });
+  } else if (mode==='existing') {
+    const rls = VA.db.roomLists;
+    if (!rls.length) { toast('No existing room lists to copy from'); return; }
+    openPickerSheet('Copy from Existing', rls.map(r=>r.name), (name) => {
+      const src = rls.find(r=>r.name===name);
+      if (src) openRLEdit(null, { name: src.name+' (Copy)', rooms:[...src.rooms] });
+    });
+  }
+}
+
+function openRLEdit(id, prefill) {
+  _rlEditId = id;
+  const existing = id ? VA.roomListById(id) : null;
+  _rlEditData = prefill ? { name: prefill.name, rooms: [...prefill.rooms] }
+    : { name: existing.name, rooms: [...existing.rooms] };
+  document.getElementById('rl-edit-title').textContent = id ? 'Edit Room List' : 'New Room List';
+  document.getElementById('rl-edit-name').value = _rlEditData.name;
+  renderRLEditItems();
+  openOv('ov-rl-edit');
+}
+
+function renderRLEditItems() {
+  const el = document.getElementById('rl-edit-items'); if (!el) return;
+  el.innerHTML='';
+  (_rlEditData.rooms||[]).forEach((room,i)=>{
+    const row=document.createElement('div');row.className='ord-row';
+    const sp=document.createElement('span');sp.className='ord-name';sp.style.fontSize='13px';sp.textContent=room;
+    const btns=document.createElement('div');btns.className='ord-btns';
+    const up=document.createElement('button');up.className='ord-btn';up.textContent='↑';up.disabled=i===0;
+    up.addEventListener('click',()=>{const a=_rlEditData.rooms;[a[i],a[i-1]]=[a[i-1],a[i]];renderRLEditItems();});
+    const dn=document.createElement('button');dn.className='ord-btn';dn.textContent='↓';dn.disabled=i===_rlEditData.rooms.length-1;
+    dn.addEventListener('click',()=>{const a=_rlEditData.rooms;[a[i],a[i+1]]=[a[i+1],a[i]];renderRLEditItems();});
+    const rm=document.createElement('button');rm.className='btn bxs brd';rm.textContent='✕';
+    rm.addEventListener('click',()=>{_rlEditData.rooms.splice(i,1);renderRLEditItems();});
+    btns.appendChild(up);btns.appendChild(dn);btns.appendChild(rm);
+    row.appendChild(sp);row.appendChild(btns);el.appendChild(row);
+  });
+}
+
+function rlEditorAddRoom() {
+  const inp=document.getElementById('rl-edit-room-inp');
+  const v=(inp?.value||'').trim();if(!v)return;
+  if (_rlEditData.rooms.includes(v)) { toast('"'+v+'" already exists'); inp.select(); return; }
+  _rlEditData.rooms.push(v);inp.value='';renderRLEditItems();
+}
+
+function saveRLEditor() {
+  const name=document.getElementById('rl-edit-name').value.trim();
+  if(!name){toast('Please enter a name');return;}
+  if(!_rlEditData.rooms.length){toast('Room list cannot be empty');return;}
+  // Duplicate name check (ignore self when editing)
+  const dupRL = VA.db.roomLists.find(r => r.name.toLowerCase()===name.toLowerCase() && r.id!==_rlEditId);
+  if(dupRL){toast('A room list named "'+name+'" already exists');return;}
+  if(_rlEditId){
+    const rl=VA.roomListById(_rlEditId);
+    if(rl){rl.name=name;rl.rooms=[..._rlEditData.rooms];}
+  } else {
+    VA.db.roomLists.push({id:VA.uid(),name,rooms:[..._rlEditData.rooms]});
+  }
+  VA.save();closeOv('ov-rl-edit');renderRLList();loadTplEditor();toast('Room list saved');
+}
+
+// openPickerSheet — delegates to unified VA_PICKER
+function openPickerSheet(title, items, onSelect) {
+  VA_PICKER.openSingle(title, items, onSelect, null);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TEMPLATE MANAGER
+// ══════════════════════════════════════════════════════════════
+function getCurTpl() {
+  const s=document.getElementById('tpl-select');if(!s)return null;
+  const i=parseInt(s.value);return isNaN(i)?null:VA.db.templates[i]||null;
+}
+function populateTplSelect() {
+  const s=document.getElementById('tpl-select');if(!s)return;
+  const cur=s.value;
+  s.innerHTML=VA.db.templates.map((t,i)=>`<option value="${i}">${VA.esc(t.name)}</option>`).join('');
+  const def=VA.db.templates.findIndex(t=>t.name===VA.DEFAULT_TPL);
+  if(cur!==''&&VA.db.templates[parseInt(cur)])s.value=cur;
+  else if(def>=0)s.value=String(def);
+}
+
+function loadTplEditor() {
+  const tpl=getCurTpl();
+  const el=document.getElementById('template-editor');
+  if(!tpl){el.innerHTML='';return;}
+  const isDef=tpl.name===VA.DEFAULT_TPL;
+  let h='<div class="divider"></div>';
+  if(!isDef)h+=`<div style="display:flex;gap:6px;margin-bottom:10px">
+    <button class="btn bs bsm" onclick="renameTpl()">Rename</button>
+    <button class="btn brd bsm" onclick="deleteTpl()">Delete Template</button>
+  </div>`;
+
+  // Room list selector
+  h+=`<div class="fg mb8"><label class="fl">Room List</label>
+    <select id="tpl-rl-sel" onchange="tplSetRL(this.value)">
+      ${VA.db.roomLists.map(rl=>`<option value="${rl.id}"${tpl.roomListId===rl.id?' selected':''}>${VA.esc(rl.name)} (${rl.rooms.length} rooms)</option>`).join('')}
+    </select>
+  </div>`;
+  if(!VA.roomListById(tpl.roomListId)&&VA.db.roomLists.length)
+    h+=`<p class="hint b-am mb8">&#9888; Assigned room list was deleted — will use first available.</p>`;
+
+  // Category list with reorder + remove
+  h+=`<p class="sectlbl">Inspection Categories <span style="font-size:10px;font-weight:400;color:var(--txmt)">(order here only affects new projects)</span></p>`;
+  h+=`<div id="tpl-cat-rows"></div>`;
+  h+=`<button class="btn bs bsm mt8" onclick="openTplAddCat()">+ Add Category</button>`;
+  el.innerHTML=h;
+  renderTplCatRows();
+}
+
+function renderTplCatRows() {
+  const tpl=getCurTpl();const el=document.getElementById('tpl-cat-rows');if(!tpl||!el)return;
+  const ids=tpl.categoryIds||[];
+  if(!ids.length){el.innerHTML='<p class="hint">No categories. Tap + Add Category.</p>';return;}
+  el.innerHTML='';
+  ids.forEach((id,i)=>{
+    const cat=VA.catById(id);
+    const wrap=document.createElement('div');
+    wrap.style.cssText='border:1px solid var(--bd);border-radius:var(--r);margin-bottom:6px;overflow:hidden';
+
+    // Header row
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;padding:9px 10px;gap:6px;background:var(--sf2)';
+
+    const sp=document.createElement('span');sp.style.cssText='flex:1;font-size:14px;font-weight:500';
+    sp.innerHTML=cat
+      ?`${VA.esc(cat.name)} <span style="font-size:11px;color:var(--txmt);font-weight:400">${cat.items.length} items</span>`
+      :`<span style="color:var(--txmt);font-style:italic">[deleted]</span>`;
+
+    // Expand/collapse button
+    const expBtn=document.createElement('button');
+    expBtn.className='ord-btn';expBtn.style.cssText='width:26px;height:26px;font-size:11px';
+    expBtn.textContent='▼';
+
+    const btns=document.createElement('div');btns.className='ord-btns';
+    const up=document.createElement('button');up.className='ord-btn';up.textContent='↑';up.disabled=i===0;
+    up.addEventListener('click',()=>{[ids[i],ids[i-1]]=[ids[i-1],ids[i]];VA.save();renderTplCatRows();});
+    const dn=document.createElement('button');dn.className='ord-btn';dn.textContent='↓';dn.disabled=i===ids.length-1;
+    dn.addEventListener('click',()=>{[ids[i],ids[i+1]]=[ids[i+1],ids[i]];VA.save();renderTplCatRows();});
+    const rm=document.createElement('button');rm.className='btn bxs brd';rm.textContent='✕';
+    rm.addEventListener('click',()=>{ids.splice(i,1);VA.save();renderTplCatRows();});
+    btns.appendChild(up);btns.appendChild(dn);btns.appendChild(rm);
+
+    row.appendChild(sp);row.appendChild(expBtn);row.appendChild(btns);
+
+    // Expandable item preview (read-only)
+    const preview=document.createElement('div');
+    preview.style.cssText='display:none;padding:8px 10px;border-top:1px solid var(--bd);background:var(--sf)';
+    if(cat&&cat.items.length){
+      preview.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:5px">'+
+        cat.items.map(it=>`<span style="background:var(--sf2);border:1px solid var(--bd);border-radius:10px;padding:2px 8px;font-size:12px">${VA.esc(it)}</span>`).join('')+
+        '</div>';
+    } else if(cat){
+      preview.innerHTML='<p style="font-size:12px;color:var(--txmt);font-style:italic">No items.</p>';
+    }
+
+    expBtn.addEventListener('click',()=>{
+      const open=preview.style.display==='block';
+      preview.style.display=open?'none':'block';
+      expBtn.textContent=open?'▼':'▲';
+    });
+
+    wrap.appendChild(row);
+    if(cat)wrap.appendChild(preview);
+    el.appendChild(wrap);
+  });
+}
+
+function tplSetRL(id){const t=getCurTpl();if(t){t.roomListId=id;VA.save();}}
+
+function openTplAddCat() {
+  const tpl=getCurTpl();if(!tpl)return;
+  const existing=new Set(tpl.categoryIds||[]);
+  const available=VA.activeCats().filter(c=>!existing.has(c.id));
+  if(!available.length){toast('All categories already added');return;}
+  openPickerSheet('Add Category to Template',available.map(c=>c.name),(name)=>{
+    const cat=VA.activeCats().find(c=>c.name===name);
+    if(cat){
+      if(!tpl.categoryIds)tpl.categoryIds=[];
+      tpl.categoryIds.push(cat.id);
+      VA.save();renderTplCatRows();
+    }
+  });
+}
+
+function newTemplate(){
+  const nm=prompt('New template name:');if(!nm)return;
+  if(VA.db.templates.find(t=>t.name===nm)){toast('Name exists');return;}
+  VA.db.templates.push({name:nm,categoryIds:[],roomListId:VA.db.roomLists[0]?.id||''});
+  VA.save();populateTplSelect();
+  document.getElementById('tpl-select').value=String(VA.db.templates.length-1);
+  loadTplEditor();toast('Template created');
+}
+function renameTpl(){
+  const t=getCurTpl();if(!t)return;
+  const nm=prompt('Rename:',t.name);if(!nm||nm===t.name)return;
+  if(VA.db.templates.find(x=>x.name===nm)){toast('Name exists');return;}
+  t.name=nm;VA.save();populateTplSelect();loadTplEditor();
+}
+function deleteTpl(){
+  const s=document.getElementById('tpl-select');const i=parseInt(s.value);if(isNaN(i))return;
+  if(VA.db.templates[i]?.name===VA.DEFAULT_TPL){toast('Cannot delete Default template');return;}
+  if(!confirm('Delete "'+VA.db.templates[i].name+'"?'))return;
+  VA.db.templates.splice(i,1);VA.save();populateTplSelect();loadTplEditor();
+}
+function exportTpls(){downloadBlob(new Blob([JSON.stringify({categories:VA.db.categories,roomLists:VA.db.roomLists,templates:VA.db.templates},null,2)],{type:'application/json'}),'valueaid-templates.json');}
+function importTpls(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{
+    const d=JSON.parse(e.target.result);
+    if(d.templates){d.templates.forEach(t=>{const ei=VA.db.templates.findIndex(x=>x.name===t.name);if(ei>=0)VA.db.templates[ei]=t;else VA.db.templates.push(t);});}
+    if(d.categories){d.categories.forEach(c=>{const ei=VA.db.categories.findIndex(x=>x.id===c.id);if(ei>=0)VA.db.categories[ei]=c;else VA.db.categories.push(c);});}
+    if(d.roomLists){d.roomLists.forEach(rl=>{const ei=VA.db.roomLists.findIndex(x=>x.id===rl.id);if(ei>=0)VA.db.roomLists[ei]=rl;else VA.db.roomLists.push(rl);});}
+    VA.seed();VA.save();renderCatList();renderRLList();populateTplSelect();loadTplEditor();toast('Imported');
+  }catch{toast('Invalid file');}};r.readAsText(f);inp.value='';
+}
+
+// ── Data ─────────────────────────────────────────────────────────
+function exportAllData(){downloadBlob(new Blob([JSON.stringify(VA.db,null,2)],{type:'application/json'}),'valueaid-backup-'+new Date().toISOString().slice(0,10)+'.json');toast('Exported');}
+function importAllData(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(confirm('Replace all current data?')){Object.assign(VA.db,d);VA.seed();VA.save();applyTheme(VA.db.settings?.theme||'light');renderAllLists();renderCatList();renderRLList();populateTplSelect();loadTplEditor();toast('Imported');}}catch{toast('Invalid file');}};r.readAsText(f);inp.value='';
+}
+
+function dismissNotice(){document.getElementById('storage-notice').style.display='none';try{localStorage.setItem('va_notice_dismissed','1');}catch(e){}}
+
+pageInit();
+renderAllLists();
+renderCatList();
+renderRLList();
+populateTplSelect();
+loadTplEditor();
+try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
+</script>
+</body>
+</html>

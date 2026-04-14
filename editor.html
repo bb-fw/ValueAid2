@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid — Editor</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="hbtn">&#8592;</a>
+    <span class="logo" id="ed-title" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Edit Project</span>
+    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+  </header>
+  <div class="page-content"><div class="pgw" id="ed-body"><p style="padding:20px;text-align:center;color:var(--txmt)">Loading...</p></div></div>
+  <div class="sticky-bar">
+    <button class="btn brd bsm" onclick="confirmDelete()">Delete</button>
+    <button class="btn bs bsm" onclick="doExportPDF()">&#128196; PDF</button>
+    <button class="btn bs bsm" style="font-size:16px;padding:6px 10px" onclick="openCameraTag()" title="Take Photo">&#128247;</button>
+    <button class="btn bp" style="flex:1" onclick="saveClose()">Close</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- hidden camera input -->
+<input type="file" id="cam-input" accept="image/*" capture="environment" style="display:none">
+
+<!-- CAMERA TAGGER -->
+<div class="overlay" id="cam-ov">
+  <div class="sheet" style="max-height:92vh;display:flex;flex-direction:column">
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px" id="cam-body"></div>
+    <div style="flex-shrink:0;padding:12px 16px;border-top:1px solid var(--bd);background:var(--sf)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:15px;font-weight:600">&#128247; Photo Tagger</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bs bsm" onclick="camClose()" style="flex:1">&#10005; Close</button>
+        <button class="btn bs bsm" onclick="camClearAll()" style="flex:1">&#10006; Clear</button>
+        <button class="btn bp" onclick="camShoot()" style="flex:2">&#128247; Shoot</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UNIFIED PICKER -->
+<div class="overlay" id="va-picker-ov">
+  <div class="sheet" style="display:flex;flex-direction:column;max-height:88vh">
+    <div id="va-pk-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px"></div>
+    <div style="flex-shrink:0;padding:12px 16px;border-top:1px solid var(--bd);background:var(--sf)">
+      <div id="va-pk-custom-row" style="display:none;gap:6px;margin-bottom:8px">
+        <input type="text" id="va-pk-custom-inp" placeholder="Add custom..." style="flex:1">
+        <button class="btn bp bsm" onclick="VA_PICKER.addCustom()">Add</button>
+      </div>
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="va-pk-search" placeholder="Search..." style="padding-left:32px"
+               oninput="VA_PICKER._onSearch(this.value)">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span id="va-pk-title" style="font-size:15px;font-weight:600"></span>
+        <button class="btn bp bsm" id="va-pk-done">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INLINE MANAGER (valuers / property types) -->
+<div class="overlay" id="mgr-ov">
+  <div class="sheet">
+    <div class="sheet-hdr"><h3 id="mgr-title">Manage</h3></div>
+    <div class="sheet-body">
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <input type="text" id="mgr-inp" placeholder="Add new..." style="flex:1">
+        <button class="btn bp bsm" id="mgr-add">Add</button>
+      </div>
+      <div id="mgr-list"></div>
+    </div>
+    <div class="sheet-footer"><button class="btn bp bbl" id="mgr-done">Done</button></div>
+  </div>
+</div>
+
+<!-- NOTE EDITOR -->
+<div class="overlay" id="note-ov">
+  <div class="sheet" style="max-height:60vh">
+    <div class="sheet-hdr"><h3>Add Note</h3></div>
+    <div class="sheet-body">
+      <textarea id="note-ta" rows="5" placeholder="Enter note..." style="width:100%;resize:vertical;min-height:100px"></textarea>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn bs" onclick="closeOv('note-ov')">Cancel</button>
+      <button class="btn bp" style="flex:1" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay center" id="ov-conf">
+  <div class="modal-box">
+    <h3>Delete Project?</h3><p id="conf-msg">This cannot be undone.</p>
+    <div class="modal-footer">
+      <button class="btn bs" onclick="closeOv('ov-conf')">Cancel</button>
+      <button class="btn brd" id="conf-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script src="js/export.js"></script>
+<script src="js/editor-notes.js"></script>
+<script src="js/editor-findings.js"></script>
+<script src="js/editor-camera.js"></script>
+<script src="js/editor-core.js"></script>
+<script>
+// Thin init — all logic lives in the JS modules above
+editorInit();
+</script>
+</body>
+</html>
