@@ -14,7 +14,7 @@
 <div id="app">
   <header class="app-header">
     <a href="index.html" class="logo">ValueAid <span>Schedule</span></a>
-    <div class="hdr-acts"><a href="settings.html" class="hbtn" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600">&#9881; Settings</a></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn settings-btn">&#9881; Settings</a></div>
   </header>
   <div id="travel-banner" class="travel-banner">
     <div class="pulse"></div>
@@ -82,29 +82,28 @@ function renderCal(){
     const totalInsp=(e.inspections.length)+(e.caseInspections.length);
     const hasDeadline=e.deadlines.length>0;
     const hasEvents=totalInsp>0||hasDeadline;
-    let dots='';
-    if(totalInsp>0) dots+=`<span style="width:5px;height:5px;border-radius:50%;background:var(--gd);display:inline-block"></span>`;
-    if(hasDeadline) dots+=`<span style="width:5px;height:5px;border-radius:50%;background:var(--rd);display:inline-block"></span>`;
+    let indicators='';
+    if(totalInsp>0) indicators+=`<span style="font-size:8px;font-weight:700;color:var(--gd);background:var(--gnbg);border-radius:6px;padding:0 3px;line-height:1.6">${totalInsp}</span>`;
+    if(hasDeadline) indicators+=`<span style="font-size:8px;font-weight:700;color:var(--rd);background:var(--rdbg);border-radius:6px;padding:0 3px;line-height:1.6">${e.deadlines.length}</span>`;
     h+=`<div class="cal-day${iso===today?' today':''}${iso===cSel?' selected':''}${hasEvents?' has-events':''}" data-iso="${iso}" onclick="calSel('${iso}')">
       <span class="dn">${d}</span>
-      ${dots?`<div style="display:flex;gap:2px;justify-content:center;margin-top:1px">${dots}</div>`:''}
+      ${indicators?`<div style="display:flex;gap:2px;justify-content:center;margin-top:1px;flex-wrap:wrap">${indicators}</div>`:''}
     </div>`;
   }
   const rem=(7-(first+dim)%7)%7;for(let i=1;i<=rem;i++)h+=`<div class="cal-day other-month"><span class="dn">${i}</span></div>`;
   document.getElementById('cal-grid').innerHTML=h;
-  renderEvs(cSel);
+  renderEvs(cSel, ev);
 }
 function calSel(iso) {
   cSel = iso;
-  // Update selected state without rebuilding the full grid
   document.querySelectorAll('.cal-day').forEach(el => {
     el.classList.toggle('selected', el.dataset.iso === iso);
   });
-  renderEvs(iso);
+  renderEvs(iso, buildEventMap());
 }
-function renderEvs(date){
+function renderEvs(date, ev){
   const el=document.getElementById('cal-events');
-  const ev=buildEventMap();
+  if (!ev) ev=buildEventMap();
   const e=ev[date]||{inspections:[],deadlines:[],caseInspections:[]};
   const hasAnything=e.inspections.length||e.caseInspections.length||e.deadlines.length;
   if(!hasAnything){
@@ -112,18 +111,15 @@ function renderEvs(date){
     return;
   }
   let html='';
-  // Standalone inspections (not linked to a case)
-  if(e.inspections.length){
+  // All inspections (standalone projects + case inspections) under one header
+  const allInsp = e.inspections.length + e.caseInspections.length;
+  if(allInsp){
     html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
     html+=e.inspections.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
       <div class="ev-time">${VA.esc(p.time||'Time not set')} &bull; ${VA.esc(p.ptype||'Property')}</div>
       <div class="ev-title">${VA.esc(p.addr||'Untitled')}</div>
       <div class="ev-sub">${p.valuer?'Valuer: '+VA.esc(p.valuer):''}${p.cond?' &bull; '+VA.esc(p.cond):''}</div>
     </div>`).join('');
-  }
-  // Case inspections
-  if(e.caseInspections.length){
-    html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
     html+=e.caseInspections.map(c=>`<div class="ev-item" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
       <div class="ev-time">${VA.esc(c.inspTime||'Time not set')}${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
       <div class="ev-title">${VA.esc(c.addr||'No address')}</div>

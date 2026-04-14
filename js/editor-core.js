@@ -144,24 +144,12 @@ function edRefInput(val) {
 }
 
 function _getLinkConflictsFromProject(p, c) {
-  // Returns conflict descriptions when linking from project side (case values win)
-  const conflicts = [];
-  const fields = [
-    { label: 'Ref No.',         pVal: p.ref,    cVal: c.ref    },
-    { label: 'Address',         pVal: p.addr,   cVal: c.addr   },
-    { label: 'Inspection Date', pVal: p.date,   cVal: c.inspDate },
-    { label: 'Inspection Time', pVal: p.time,   cVal: c.inspTime },
-  ];
-  fields.forEach(f => {
-    const pHas = f.pVal && String(f.pVal).trim();
-    const cHas = f.cVal && String(f.cVal).trim();
-    if (pHas && cHas && f.pVal !== f.cVal) {
-      conflicts.push(f.label + ': Project "' + f.pVal + '" vs Case "' + f.cVal + '" — Case value will be used');
-    } else if (pHas && !cHas) {
-      conflicts.push(f.label + ': Project has "' + f.pVal + '" — case field is empty, project value kept');
-    }
-  });
-  return conflicts;
+  const ow = [];
+  if (p.ref && c.ref && p.ref !== c.ref) ow.push('Ref (' + p.ref + ' → ' + c.ref + ')');
+  if (p.addr && c.addr && p.addr !== c.addr) ow.push('Address');
+  if (p.date && c.inspDate && p.date !== c.inspDate) ow.push('Insp. Date');
+  if (p.time && c.inspTime && p.time !== c.inspTime) ow.push('Insp. Time');
+  return ow;
 }
 
 function openLinkFromCase() {
@@ -175,11 +163,7 @@ function openLinkFromCase() {
       const c = cases.find(c => ((c.ref ? '#'+c.ref+' — ' : '')+(c.addr||'No address')) === label);
       if (!c) return;
       const conflicts = _getLinkConflictsFromProject(p, c);
-      if (conflicts.length) {
-        const msg = 'Linking these records will sync shared fields.\nCase values take priority where both exist:\n\n' +
-          conflicts.map(x => '• '+x).join('\n') + '\n\nProceed?';
-        if (!confirm(msg)) return;
-      }
+      if (conflicts.length && !confirm('Linking will overwrite: ' + conflicts.join(', ') + '.\n\nCase values will be used. Continue?')) return;
       p.caseId = c.id; c.projectId = p.id;
       if (c.ref) p.ref = c.ref;
       if (c.addr) p.addr = c.addr;

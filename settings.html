@@ -313,7 +313,7 @@ function renderSimple(cid, items, removeFn) {
     row.className = 'ord-row';
     const sp = document.createElement('span'); sp.className = 'ord-name'; sp.textContent = item;
     const btn = document.createElement('button'); btn.className = 'btn bxs brd'; btn.textContent = 'Remove';
-    btn.addEventListener('click', () => { removeFn(i); renderAllLists(); renderCLList(); });
+    btn.addEventListener('click', () => { removeFn(i); renderAllLists(); });
     row.appendChild(sp); row.appendChild(btn); el.appendChild(row);
   });
 }
@@ -323,10 +323,10 @@ function renderAllLists() {
   renderSimple('levelnames-list', VA.db.levelNames, i=>{ VA.db.levelNames.splice(i,1); VA.save(); });
   renderSimple('savedlocs-list', VA.db.savedLocations, i=>{ VA.db.savedLocations.splice(i,1); VA.save(); });
 }
-function addValuer(){const v=document.getElementById('new-valuer').value.trim();if(!v)return;if(!VA.db.valuers.includes(v)){VA.db.valuers.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-valuer').value='';}
-function addPropType(){const v=document.getElementById('new-ptype').value.trim();if(!v)return;if(!VA.db.propertyTypes.includes(v)){VA.db.propertyTypes.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-ptype').value='';}
-function addLevelName(){const v=document.getElementById('new-level').value.trim();if(!v)return;if(!VA.db.levelNames.includes(v)){VA.db.levelNames.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-level').value='';}
-function addSavedLoc(){const v=document.getElementById('new-loc').value.trim();if(!v)return;if(!VA.db.savedLocations.includes(v)){VA.db.savedLocations.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-loc').value='';}
+function addValuer(){const v=document.getElementById('new-valuer').value.trim();if(!v)return;if(!VA.db.valuers.includes(v)){VA.db.valuers.push(v);VA.save();}renderAllLists();document.getElementById('new-valuer').value='';}
+function addPropType(){const v=document.getElementById('new-ptype').value.trim();if(!v)return;if(!VA.db.propertyTypes.includes(v)){VA.db.propertyTypes.push(v);VA.save();}renderAllLists();document.getElementById('new-ptype').value='';}
+function addLevelName(){const v=document.getElementById('new-level').value.trim();if(!v)return;if(!VA.db.levelNames.includes(v)){VA.db.levelNames.push(v);VA.save();}renderAllLists();document.getElementById('new-level').value='';}
+function addSavedLoc(){const v=document.getElementById('new-loc').value.trim();if(!v)return;if(!VA.db.savedLocations.includes(v)){VA.db.savedLocations.push(v);VA.save();}renderAllLists();document.getElementById('new-loc').value='';}
 
 // ══════════════════════════════════════════════════════════════
 //  CATEGORY MANAGER
@@ -750,7 +750,7 @@ function importAllData(inp){
       VA.seed(); // re-seeds default checklist if checklists is empty
       VA.save();
       applyTheme(VA.db.settings?.theme||'light');
-      renderAllLists(); renderCLList(); renderCatList(); renderRLList();
+      renderAllLists(); renderCatList(); renderRLList();
       populateTplSelect(); loadTplEditor();
       toast('Imported');
     }catch{toast('Invalid file');}
@@ -761,7 +761,7 @@ function importAllData(inp){
 function dismissNotice(){document.getElementById('storage-notice').style.display='none';try{localStorage.setItem('va_notice_dismissed','1');}catch(e){}}
 
 pageInit();
-renderAllLists(); renderCLList();
+renderAllLists();
 renderCatList();
 renderRLList();
 populateTplSelect();

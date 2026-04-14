@@ -35,6 +35,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 .hdr-acts{margin-left:auto;display:flex;gap:6px}
 .hbtn{background:rgba(255,255,255,.12);border:none;color:#fff;width:34px;height:34px;border-radius:var(--rs);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none;flex-shrink:0}
 .hbtn:active{background:rgba(255,255,255,.28)}
+.settings-btn{width:auto;padding:0 10px;gap:5px;font-size:12px;font-weight:600;letter-spacing:.2px}
 
 /* ── Bottom nav ──────────────────────────────── */
 .bottom-nav{height:calc(var(--nh) + var(--safe-b));background:var(--sf);border-top:1px solid var(--bd);display:flex;flex-shrink:0;z-index:100;padding-bottom:var(--safe-b)}
@@ -79,7 +80,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-
 /* ── Forms ───────────────────────────────────── */
 .fg{margin-bottom:12px}.fg:last-child{margin-bottom:0}
 .fl{display:block;font-size:11px;font-weight:600;color:var(--txmt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=tel],select,textarea{
   width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);
   padding:10px 12px;font-size:14px;color:var(--tx);font-family:inherit;
   -webkit-appearance:none;appearance:none;outline:none;

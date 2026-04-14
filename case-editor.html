@@ -39,7 +39,7 @@
   <header class="app-header">
     <a href="tracker.html" class="hbtn">&#8592;</a>
     <span class="logo" id="ce-title" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Case</span>
-    <div class="hdr-acts"><a href="settings.html" class="hbtn" style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600">&#9881; Settings</a></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn settings-btn">&#9881; Settings</a></div>
   </header>
   <div class="page-content">
     <div class="pgw" id="ce-body">
@@ -94,16 +94,6 @@
 let cid = null;
 const gC = () => (VA.db.cases||[]).find(x => x.id === cid);
 
-function addBusinessDays(date, days) {
-  const d = new Date(date + 'T00:00:00');
-  let added = 0;
-  while (added < days) {
-    d.setDate(d.getDate() + 1);
-    const dow = d.getDay();
-    if (dow !== 0 && dow !== 6) added++;
-  }
-  return d.toISOString().slice(0, 10);
-}
 function addDays(date, days) {
   const d = new Date(date + 'T00:00:00');
   d.setDate(d.getDate() + days);
@@ -111,23 +101,12 @@ function addDays(date, days) {
 }
 
 function getLinkConflicts(c, p) {
-  const conflicts = [];
-  const fields = [
-    { label: 'Ref No.', cVal: c.ref, pVal: p.ref },
-    { label: 'Address', cVal: c.addr, pVal: p.addr },
-    { label: 'Inspection Date', cVal: c.inspDate, pVal: p.date },
-    { label: 'Inspection Time', cVal: c.inspTime, pVal: p.time },
-  ];
-  fields.forEach(f => {
-    const cHas = f.cVal && String(f.cVal).trim();
-    const pHas = f.pVal && String(f.pVal).trim();
-    if (cHas && pHas && f.cVal !== f.pVal) {
-      conflicts.push(f.label + ': Case "' + f.cVal + '" vs Project "' + f.pVal + '" — Case value will be used');
-    } else if (!cHas && pHas) {
-      conflicts.push(f.label + ': Project has "' + f.pVal + '" — case field is empty, project value kept');
-    }
-  });
-  return conflicts;
+  const ow = [];
+  if (p.ref && c.ref && p.ref !== c.ref) ow.push('Ref (' + p.ref + ' → ' + c.ref + ')');
+  if (p.addr && c.addr && p.addr !== c.addr) ow.push('Address');
+  if (p.date && c.inspDate && p.date !== c.inspDate) ow.push('Insp. Date');
+  if (p.time && c.inspTime && p.time !== c.inspTime) ow.push('Insp. Time');
+  return ow;
 }
 
 // ── Build page ────────────────────────────────────────────────
@@ -140,8 +119,8 @@ function buildCase(c) {
     linkedHtml = '<div class="linked-box">' +
       '<span style="font-size:18px">&#128279;</span>' +
       '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--gn)">Linked to Inspection Project</div>' +
-      '<div style="font-size:12px;color:var(--tx)">' + VA.esc(p ? (p.addr||p.ref||'Project') : 'Project (not found)') + '</div></div>' +
-      '<button class="btn bs bsm" onclick="viewLinkedProject()">View</button>' +
+      '<div style="font-size:12px;color:var(--tx)">' + VA.esc(p ? (p.addr||p.ref||'Project') : 'Project not found — please unlink') + '</div></div>' +
+      (p ? '<button class="btn bs bsm" onclick="viewLinkedProject()">View</button>' : '') +
       '<button class="btn brd bsm" onclick="unlinkProject()">Unlink</button></div>';
   } else {
     linkedHtml = '<div class="unlinked-box">' +
@@ -169,7 +148,7 @@ function buildCase(c) {
     '<input type="text" id="ce-client" placeholder="Name" value="' + VA.esc(c.client||'') + '" oninput="ceSave()"></div>' +
 
     '<div class="fg"><label class="fl">Mobile No.</label>' +
-    '<input type="tel" id="ce-phone" placeholder="e.g. 9123 4567" value="' + VA.esc(c.phone||'') + '" oninput="cePhoneInput(this)"></div>' +
+    '<input type="tel" id="ce-phone" placeholder="e.g. 9123 4567" value="' + VA.esc(formatPhoneVal(c.phone||'')) + '" oninput="cePhoneInput(this)"></div>' +
 
     '<div class="r2">' +
     '<div class="fg"><label class="fl">Inspection Date</label><input type="date" id="ce-inspdate" value="' + (c.inspDate||'') + '" onchange="ceSave()"></div>' +
@@ -181,10 +160,10 @@ function buildCase(c) {
 
     '<div class="fg"><label class="fl">Deadline</label>' +
     '<input type="date" id="ce-deadline" value="' + (c.deadline||'') + '" onchange="ceSave()">' +
-    '<div class="quick-date"><span style="font-size:11px;color:var(--txmt)">Set deadline:</span>' +
-    '<button class="qdBtn" onclick="setDeadlineQuick(5,false)">+5 days</button>' +
-    '<button class="qdBtn" onclick="setDeadlineQuick(5,true)">+1 biz week</button>' +
-    '<button class="qdBtn" onclick="setDeadlineQuick(10,true)">+2 biz weeks</button></div></div>' +
+    '<div class="quick-date"><span style="font-size:11px;color:var(--txmt)">From created date:</span>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(5)">+5 days</button>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(7)">+7 days</button>' +
+    '<button class="qdBtn" onclick="setDeadlineQuick(14)">+14 days</button></div></div>' +
 
     '<div class="divider"></div>' +
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
@@ -304,6 +283,10 @@ function removeStage(i) {
 }
 
 // ── Phone auto-format (8 digits → XXXX XXXX) ─────────────────
+function formatPhoneVal(val) {
+  const digits = (val||'').replace(/\D/g, '');
+  return digits.length === 8 ? digits.slice(0,4) + ' ' + digits.slice(4) : val;
+}
 function cePhoneInput(inp) {
   const digits = inp.value.replace(/\D/g, '');
   if (digits.length === 8) {
@@ -321,9 +304,10 @@ function ceRefInput(val) {
 }
 
 // ── Deadline quick set ────────────────────────────────────────
-function setDeadlineQuick(n, bizDays) {
-  const base = document.getElementById('ce-created')?.value || new Date().toISOString().slice(0,10);
-  const dl = bizDays ? addBusinessDays(base, n) : addDays(base, n);
+function setDeadlineQuick(n) {
+  const c = gC(); if (!c) return;
+  const base = c.createdAt || new Date().toISOString().slice(0,10);
+  const dl = addDays(base, n);
   const inp = document.getElementById('ce-deadline'); if (!inp) return;
   inp.value = dl; ceSave();
 }
@@ -363,11 +347,7 @@ function openLinkPicker() {
       const p = projects.find(p => ((p.ref?'#'+p.ref+' — ':'')+(p.addr||'No address'))===label);
       if (!p) return;
       const conflicts = getLinkConflicts(c, p);
-      if (conflicts.length) {
-        const msg = 'Linking these records will sync shared fields.\nCase values take priority where both exist:\n\n' +
-          conflicts.map(x=>'• '+x).join('\n') + '\n\nProceed?';
-        if (!confirm(msg)) return;
-      }
+      if (conflicts.length && !confirm('Linking will overwrite: ' + conflicts.join(', ') + '.\n\nCase values will be used. Continue?')) return;
       c.projectId=p.id; p.caseId=c.id;
       if (c.ref) p.ref=c.ref;
       if (c.addr) p.addr=c.addr;

@@ -49,7 +49,7 @@ const VA_PICKER = (() => {
    */
   function openMulti(title, items, selSet, onToggle, onCustomAdd, onDone) {
     _title = title;
-    _items = items;
+    _items = [...items]; // copy so addCustom doesn't mutate caller's array
     _selSet = selSet;
     _onToggle = onToggle;
     _onCustomAdd = onCustomAdd;
@@ -67,7 +67,7 @@ const VA_PICKER = (() => {
    */
   function openSingle(title, items, onSelect, onCustomAdd) {
     _title = title;
-    _items = items;
+    _items = [...items]; // copy so addCustom doesn't mutate caller's array
     _selSet = null;
     _onToggle = null;
     _onCustomAdd = onCustomAdd;
