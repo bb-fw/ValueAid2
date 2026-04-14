@@ -186,7 +186,9 @@ function buildFilename(p) {
   const seq=String((p.photoSeq||0)+1).padStart(3,'0');
   const slug=s=>s.replace(/[^a-zA-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
   const catLabel=(camSel.catId&&camSel.item)?(()=>{
-    const cat=(p?.cats||[]).find(c=>(c.id||c.name)===camSel.catId);
+    // Search p.cats first, then all unit cat lists (per-unit layout)
+    let cat=(p?.cats||[]).find(c=>(c.id||c.name)===camSel.catId);
+    if(!cat)(p?.levels||[]).some(u=>{cat=(u.cats||[]).find(c=>(c.id||c.name)===camSel.catId);return!!cat;});
     return cat?slug(cat.name)+'_'+slug(camSel.item):slug(camSel.item);
   })():'';
   const parts=[ref,camSel.level?slug(camSel.level):'',camSel.room?slug(camSel.room):'',catLabel,seq].filter(Boolean);

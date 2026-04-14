@@ -16,7 +16,7 @@
   <header class="app-header">
     <a href="index.html" class="hbtn">&#8592;</a>
     <span class="logo" id="ed-title" style="font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Edit Project</span>
-    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn">&#9881;</a></div>
   </header>
   <div class="page-content"><div class="pgw" id="ed-body"><p style="padding:20px;text-align:center;color:var(--txmt)">Loading...</p></div></div>
   <div class="sticky-bar">
@@ -71,17 +71,20 @@
 </div>
 
 <!-- INLINE MANAGER (valuers / property types) -->
-<div class="overlay" id="mgr-ov">
+<div class="overlay" id="mgr-sheet">
   <div class="sheet">
-    <div class="sheet-hdr"><h3 id="mgr-title">Manage</h3></div>
+    <div class="sheet-hdr">
+      <button class="btn bsm bs" style="width:34px;padding:0" onclick="closeOv('mgr-sheet')">&#10005;</button>
+      <h3 id="mgr-title">Manage</h3>
+    </div>
     <div class="sheet-body">
       <div style="display:flex;gap:6px;margin-bottom:12px">
         <input type="text" id="mgr-inp" placeholder="Add new..." style="flex:1">
-        <button class="btn bp bsm" id="mgr-add">Add</button>
+        <button class="btn bp bsm" id="mgr-add-btn">Add</button>
       </div>
       <div id="mgr-list"></div>
     </div>
-    <div class="sheet-footer"><button class="btn bp bbl" id="mgr-done">Done</button></div>
+    <div class="sheet-footer"><button class="btn bp bbl" id="mgr-done-btn">Done</button></div>
   </div>
 </div>
 

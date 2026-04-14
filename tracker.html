@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3a5c">
+<title>ValueAid — Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+.case-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;cursor:pointer;transition:box-shadow var(--tr)}
+.case-card:active{box-shadow:var(--sh)}
+.case-hdr{padding:12px 14px 8px}
+.case-ref{font-size:11px;font-weight:700;letter-spacing:.8px;color:var(--txmt);text-transform:uppercase;margin-bottom:2px}
+.case-addr{font-size:15px;font-weight:600;color:var(--tx);line-height:1.3;margin-bottom:6px}
+.case-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--txmt)}
+.case-footer{padding:8px 14px 10px;border-top:1px solid var(--bd);background:var(--sf2)}
+.pipeline{display:flex;gap:3px;align-items:center}
+.pip-stage{flex:1;height:4px;border-radius:2px;background:var(--bd);transition:background var(--tr)}
+.pip-stage.done{background:var(--gn)}
+.pip-stage.active{background:var(--bl)}
+.pip-stage.delayed{background:var(--am)}
+.status-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.status-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px;letter-spacing:.3px}
+.badge-assigned{background:var(--sf2);color:var(--txmt);border:1px solid var(--bd)}
+.badge-progress{background:var(--blbg);color:var(--bl)}
+.badge-delayed{background:var(--ambg);color:var(--am)}
+.badge-complete{background:var(--gnbg);color:var(--gn)}
+.deadline-txt{font-size:11px;color:var(--txmt)}
+.deadline-urgent{color:var(--rd);font-weight:600}
+.deadline-soon{color:var(--am);font-weight:600}
+.date-grp{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--txmt);padding:14px 0 6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <a href="index.html" class="logo">ValueAid <span>Tracker</span></a>
+    <div class="hdr-acts"><a href="settings.html" class="hbtn">&#9881;</a></div>
+  </header>
+  <div id="travel-banner" class="travel-banner">
+    <div class="pulse"></div>
+    <span id="banner-txt" style="flex:1;font-size:13px">Travel in progress...</span>
+    <a href="travel.html" class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:6px 12px">View</a>
+  </div>
+  <div class="page-content">
+    <div class="pgw">
+      <div style="position:relative;margin-bottom:12px;margin-top:12px">
+        <input type="text" id="search-inp" placeholder="Search ref, address, client..."
+               style="padding-left:32px" oninput="searchQuery=this.value;renderCases()">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+      </div>
+      <div id="case-list"></div>
+    </div>
+  </div>
+  <button class="fab" onclick="newCase()" title="New Case">&#43;</button>
+  <nav class="bottom-nav">
+    <a href="tracker.html" class="ni active"><span class="ni-icon">&#128203;</span>Tracker</a>
+    <a href="index.html" class="ni"><span class="ni-icon">&#128196;</span>Inspect</a>
+    <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
+    <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
+  </nav>
+</div>
+<div id="toast"></div>
+<script src="js/db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/picker.js"></script>
+<script>
+'use strict';
+
+let searchQuery = '';
+
+// ── Helpers ───────────────────────────────────────────────────
+function getStages(c) {
+  if (c.checklistSnapshot && c.checklistSnapshot.length) return c.checklistSnapshot;
+  const cl = (VA.db.checklists||[]).find(x=>x.id===c.checklistId);
+  return cl ? cl.stages : VA.BUILTIN_STAGES;
+}
+
+function caseStatus(c) {
+  if (c.delayed) return { label:'Delayed', cls:'badge-delayed' };
+  const stage = c.stage || '';
+  const stages = getStages(c);
+  if (!stage || stage === stages[0]) return { label: stages[0]||'Assigned', cls:'badge-assigned' };
+  if (stage === stages[stages.length-1]) return { label: stage, cls:'badge-complete' };
+  return { label: stage, cls:'badge-progress' };
+}
+
+function deadlineLabel(deadline) {
+  if (!deadline) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dl = new Date(deadline+'T00:00:00');
+  const diff = Math.round((dl-today)/(1000*60*60*24));
+  if (diff < 0) return { txt: `Overdue ${Math.abs(diff)}d`, cls:'deadline-urgent' };
+  if (diff === 0) return { txt: 'Due today', cls:'deadline-urgent' };
+  if (diff <= 3) return { txt: `Due in ${diff}d`, cls:'deadline-soon' };
+  return { txt: `Due ${VA.fmtDate(deadline)}`, cls:'deadline-txt' };
+}
+
+function pipelineBar(c) {
+  const stages = getStages(c);
+  const currentIdx = stages.indexOf(c.stage||'');
+  return stages.map((st, i) => {
+    let cls = 'pip-stage';
+    if (c.delayed && i === currentIdx) cls += ' delayed';
+    else if (i < currentIdx) cls += ' done';
+    else if (i === currentIdx) cls += ' active';
+    return `<div class="${cls}" title="${VA.esc(st)}"></div>`;
+  }).join('');
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderCases() {
+  const el = document.getElementById('case-list'); if (!el) return;
+  const q = (searchQuery||'').toLowerCase();
+  let cases = (VA.db.cases||[]).slice();
+
+  if (q) {
+    cases = cases.filter(c =>
+      (c.ref||'').includes(q) ||
+      (c.addr||'').toLowerCase().includes(q) ||
+      (c.client||'').toLowerCase().includes(q)
+    );
+  }
+
+  // Sort by deadline asc (no deadline = end), then by createdAt desc
+  cases.sort((a,b) => {
+    const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
+    if (da !== db2) return da < db2 ? -1 : 1;
+    return (b.createdAt||'') < (a.createdAt||'') ? -1 : 1;
+  });
+
+  if (!cases.length) {
+    el.innerHTML = `<div class="empty-state"><div class="esi">&#128203;</div>
+      <h3>${q ? 'No results' : 'No cases yet'}</h3>
+      <p>${q ? 'Try a different search.' : 'Tap + to add your first case.'}</p></div>`;
+    return;
+  }
+
+  el.innerHTML = cases.map(c => {
+    const st = caseStatus(c);
+    const dl = deadlineLabel(c.deadline);
+    const linked = c.projectId ? `<span style="font-size:11px;color:var(--gn)">&#128279; Linked</span>` : '';
+    return `<div class="case-card" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
+      <div class="case-hdr">
+        <div class="case-ref">${c.ref ? VA.esc(c.ref) : '— no ref —'}</div>
+        <div class="case-addr">${VA.esc(c.addr||'No address')}</div>
+        <div class="case-meta">
+          ${c.client ? `<span>&#128100; ${VA.esc(c.client)}</span>` : ''}
+          ${c.inspDate ? `<span>&#128197; ${VA.fmtDate(c.inspDate)}</span>` : ''}
+          ${linked}
+        </div>
+      </div>
+      <div class="case-footer">
+        <div class="pipeline">${pipelineBar(c)}</div>
+        <div class="status-row">
+          <span class="status-badge ${st.cls}">${VA.esc(st.label)}</span>
+          ${dl ? `<span class="${dl.cls}">${dl.txt}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function newCase() {
+  const id = VA.uid();
+  const today = new Date().toISOString().slice(0,10);
+  const defaultCl = (VA.db.checklists||[])[0];
+  VA.db.cases.push({
+    id, ref:'', addr:'', client:'', phone:'',
+    inspDate:'', inspTime:'',
+    createdAt: today, deadline:'',
+    stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
+    delayed: false, notes:'',
+    checklistId: defaultCl ? defaultCl.id : '',
+    checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],
+    projectId: null
+  });
+  VA.save();
+  location.href = 'case-editor.html?id=' + id;
+}
+
+pageInit();
+renderCases();
+</script>
+</body>
+</html>

@@ -14,7 +14,20 @@ function buildEditor(p) {
   document.getElementById('ed-body').innerHTML = `
     <div class="info-box">${isB?'&#127968; Per-Unit':'&#128196; Standard'} layout &bull; ${VA.esc(p.addr||'')}</div>
     <div class="sectlbl">1. Project Information</div>
-    <div class="fg"><label class="fl">Reference No.</label><input type="text" id="ed-ref" value="${VA.esc(p.ref||'')}" oninput="autoSave()"></div>
+    <div class="fg">
+      <label class="fl" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Reference No.</span>
+        ${p.caseId
+          ? '<span style="font-size:11px;color:var(--gn);font-weight:600;cursor:pointer" onclick="viewLinkedCase()">&#128279; Linked to Case</span>'
+          : '<button class="btn bs" style="font-size:11px;padding:2px 8px" onclick="openLinkFromCase()">&#128279; Link from Tracker</button>'
+        }
+      </label>
+      <input type="text" id="ed-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123"
+             value="${VA.esc(p.ref||'')}" oninput="edRefInput(this.value)">
+      <div id="ed-ref-warn" style="font-size:11px;color:var(--am);margin-top:3px;display:none">
+        &#9888; Ref no. should be exactly 6 digits
+      </div>
+    </div>
     <div class="r2">
       <div class="fg"><label class="fl">Date of Inspection</label><input type="date" id="ed-date" value="${p.date||''}" onchange="autoSave()"></div>
       <div class="fg"><label class="fl">Time</label><input type="time" id="ed-time" value="${p.time||''}" onchange="autoSave()"></div>
@@ -124,7 +137,52 @@ function readEd() {
   }
   return p;
 }
-function autoSave(){ const p=readEd(); if(p) VA.save(); }
+function edRefInput(val) {
+  const warn = document.getElementById('ed-ref-warn');
+  if (warn) warn.style.display = (val.length > 0 && !/^\d{6}$/.test(val)) ? 'block' : 'none';
+  autoSave();
+}
+
+function openLinkFromCase() {
+  const p = gP(); if (!p) return;
+  const cases = (VA.db.cases||[]).filter(c => !c.projectId || c.projectId === p.id);
+  if (!cases.length) { toast('No unlinked cases found'); return; }
+  VA_PICKER.openSingle(
+    'Link from Case Tracker',
+    cases.map(c => (c.ref ? '#'+c.ref+' — ' : '') + (c.addr||'No address')),
+    (label) => {
+      const c = cases.find(c => ((c.ref ? '#'+c.ref+' — ' : '')+(c.addr||'No address')) === label);
+      if (!c) return;
+      p.caseId = c.id; c.projectId = p.id;
+      if (c.ref) p.ref = c.ref;
+      if (c.addr) p.addr = c.addr;
+      if (c.inspDate) p.date = c.inspDate;
+      if (c.inspTime) p.time = c.inspTime;
+      VA.save(); buildEditor(p);
+      toast('Linked to case #'+(c.ref||c.id));
+    }, null
+  );
+}
+
+function viewLinkedCase() {
+  const p = gP(); if (!p || !p.caseId) return;
+  autoSave(); location.href = 'case-editor.html?id=' + p.caseId;
+}
+
+function autoSave() {
+  const p = readEd(); if (!p) return;
+  // Sync shared fields to linked case
+  if (p.caseId) {
+    const c = (VA.db.cases||[]).find(x => x.id === p.caseId);
+    if (c) {
+      if (p.ref !== undefined) c.ref = p.ref;
+      if (p.addr !== undefined) c.addr = p.addr;
+      if (p.date !== undefined) c.inspDate = p.date;
+      if (p.time !== undefined) c.inspTime = p.time;
+    }
+  }
+  VA.save();
+}
 function saveClose(){ autoSave(); location.href='index.html'; }
 function doExportPDF(){ const p=readEd(); if(p){ VA.save(); exportProjectPDF(p); } }
 

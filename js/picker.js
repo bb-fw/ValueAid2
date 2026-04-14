@@ -89,7 +89,10 @@ const VA_PICKER = (() => {
     if (search) search.value = '';
     if (customRow) customRow.style.display = _onCustomAdd ? 'flex' : 'none';
     if (customInp) { customInp.value = ''; customInp.placeholder = 'Add custom...'; }
-    if (doneBtn) doneBtn.onclick = () => { closeOv('va-picker-ov'); if (_onDone) _onDone(); };
+    if (doneBtn) {
+      doneBtn.textContent = _singleSelect ? 'Cancel' : 'Done';
+      doneBtn.onclick = () => { closeOv('va-picker-ov'); if (_onDone) _onDone(); };
+    }
 
     _render('');
     openOv('va-picker-ov');
@@ -103,10 +106,10 @@ const VA_PICKER = (() => {
     filtered.forEach(item => {
       const sel = _selSet ? _selSet.has(item) : false;
       const div = document.createElement('div');
-      div.className = 'picker-item' + (sel ? ' selected' : '');
+      div.className = 'picker-item' + (sel ? ' selected' : '') + (_singleSelect ? ' single-sel' : '');
       const chk = document.createElement('div');
       chk.className = 'picker-check';
-      chk.textContent = sel ? '✓' : (_singleSelect ? '' : '');
+      chk.textContent = sel ? '✓' : '';
       const txt = document.createElement('span');
       txt.textContent = item;
       div.appendChild(chk); div.appendChild(txt);
@@ -133,16 +136,19 @@ const VA_PICKER = (() => {
   function addCustom() {
     const inp = document.getElementById('va-pk-custom-inp');
     const v = (inp?.value || '').trim(); if (!v) return;
+    if (_singleSelect) {
+      // Single-select: close then call custom handler (mirrors tap-to-pick behaviour)
+      closeOv('va-picker-ov');
+      if (_onCustomAdd) _onCustomAdd(v);
+      return;
+    }
+    // Multi-select: add to list and re-render
     if (_onCustomAdd) _onCustomAdd(v);
     inp.value = '';
-    // Only re-render if picker is still open (some handlers close it)
-    const stillOpen = document.getElementById('va-picker-ov')?.classList.contains('open');
-    if (stillOpen) {
-      if (!_items.includes(v)) _items.push(v);
-      if (_selSet) _selSet.add(v);
-      _render(document.getElementById('va-pk-search')?.value || '');
-      toast('Added: ' + v);
-    }
+    if (!_items.includes(v)) _items.push(v);
+    if (_selSet) _selSet.add(v);
+    _render(document.getElementById('va-pk-search')?.value || '');
+    toast('Added: ' + v);
   }
 
   return { openMulti, openSingle, addCustom, _onSearch };

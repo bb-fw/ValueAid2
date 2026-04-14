@@ -66,6 +66,9 @@ const DPT = [
 
 const TMETH = ['MRT / LRT','Bus','Driving','Taxi / Grab'];
 
+// Built-in case pipeline stages
+const BUILTIN_STAGES = ['Assigned','Inspection Booked','Inspection Completed','Case Complete'];
+
 // ── In-memory state ────────────────────────────────────────────
 let db = {
   // v5 global registries
@@ -74,6 +77,8 @@ let db = {
   // templates now reference IDs
   templates: [],     // { name, categoryIds[], roomListId }
   // unchanged
+  cases: [],        // { id, ref, addr, client, phone, inspDate, inspTime, createdAt, deadline, stage, delayed, notes, checklistId, checklistSnapshot[], projectId }
+  checklists: [],   // { id, name, stages[] } — pipeline stage templates
   projects: [], travels: [], valuers: [],
   propertyTypes: [...DPT],
   levelNames: [...DLVN],
@@ -87,6 +92,8 @@ function load() {
     const r = localStorage.getItem(DB_KEY);
     if (r) db = Object.assign(db, JSON.parse(r));
   } catch(e) {}
+  // Migrate: ensure case refs are strings
+  (db.cases||[]).forEach(c => { if(c.ref) c.ref=String(c.ref); });
   // Migrate: normalise any old project cats that still have string items
   (db.projects||[]).forEach(p => {
     if(p.cats) p.cats = normCats(p.cats);
@@ -121,6 +128,10 @@ function seed() {
     db.categories = BUILTIN_CATS.map(c => ({
       id: uid(), name: c.name, items: [...c.items]
     }));
+    dirty = true;
+  }
+  if (!db.checklists.length) {
+    db.checklists = [{ id: uid(), name: 'Default', stages: [...BUILTIN_STAGES] }];
     dirty = true;
   }
   if (!db.roomLists.length) {
@@ -208,7 +219,7 @@ return {
   activeCats, catById, roomListById,
   snapshotCats, snapshotRooms, normCats,
   // constants (still used by export, camera, etc.)
-  BUILTIN_CATS, BUILTIN_ROOMS, DLVN, DPT, TMETH, DEFAULT_TPL,
+  BUILTIN_CATS, BUILTIN_ROOMS, DLVN, DPT, TMETH, DEFAULT_TPL, BUILTIN_STAGES,
   // legacy aliases so existing code doesn't break
   get DCATS() { return BUILTIN_CATS; },
   get DROOMS() { return BUILTIN_ROOMS; },

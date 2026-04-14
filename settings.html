@@ -23,7 +23,7 @@
 <div id="app">
   <header class="app-header">
     <a href="index.html" class="logo">ValueAid <span>Settings</span></a>
-    <div class="hdr-acts"><button class="hbtn" onclick="toggleTheme()">&#9680;</button></div>
+    <div class="hdr-acts"></div>
   </header>
   <div id="travel-banner" class="travel-banner">
     <div class="pulse"></div>
@@ -152,6 +152,21 @@
       <!-- ── DATA ───────────────────────────────────────────── -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Data</div>
 
+      <!-- CASE TRACKER -->
+      <div class="card mb12">
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>&#128203; Case Tracker</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div>
+              <div style="font-size:13px;font-weight:600">Checklist</div>
+              <div style="font-size:12px;color:var(--txmt)">Pipeline stages used when creating new cases</div>
+            </div>
+            <button class="btn bs bsm" onclick="openNewChecklist()">+ New</button>
+          </div>
+          <div id="cl-list"></div>
+        </div>
+      </div>
+
       <div class="card mb12">
         <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Export &amp; Import</h3><span class="chev">&#9660;</span></div>
         <div class="card-collapse-body">
@@ -170,10 +185,10 @@
     </div>
   </div>
   <nav class="bottom-nav">
+    <a href="tracker.html" class="ni"><span class="ni-icon">&#128203;</span>Tracker</a>
     <a href="index.html" class="ni"><span class="ni-icon">&#128196;</span>Inspect</a>
     <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
     <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
-    <a href="settings.html" class="ni active"><span class="ni-icon">&#9881;</span>Settings</a>
   </nav>
 </div>
 <div id="toast"></div>
@@ -231,7 +246,7 @@
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span id="va-pk-title" style="font-size:15px;font-weight:600"></span>
-        <button class="btn bp bsm" id="va-pk-done">Cancel</button>
+        <button class="btn bp bsm" id="va-pk-done">Done</button>
       </div>
     </div>
   </div>
@@ -300,7 +315,7 @@ function renderSimple(cid, items, removeFn) {
     row.className = 'ord-row';
     const sp = document.createElement('span'); sp.className = 'ord-name'; sp.textContent = item;
     const btn = document.createElement('button'); btn.className = 'btn bxs brd'; btn.textContent = 'Remove';
-    btn.addEventListener('click', () => { removeFn(i); renderAllLists(); });
+    btn.addEventListener('click', () => { removeFn(i); renderAllLists(); renderCLList(); });
     row.appendChild(sp); row.appendChild(btn); el.appendChild(row);
   });
 }
@@ -310,10 +325,10 @@ function renderAllLists() {
   renderSimple('levelnames-list', VA.db.levelNames, i=>{ VA.db.levelNames.splice(i,1); VA.save(); });
   renderSimple('savedlocs-list', VA.db.savedLocations, i=>{ VA.db.savedLocations.splice(i,1); VA.save(); });
 }
-function addValuer(){const v=document.getElementById('new-valuer').value.trim();if(!v)return;if(!VA.db.valuers.includes(v)){VA.db.valuers.push(v);VA.save();}renderAllLists();document.getElementById('new-valuer').value='';}
-function addPropType(){const v=document.getElementById('new-ptype').value.trim();if(!v)return;if(!VA.db.propertyTypes.includes(v)){VA.db.propertyTypes.push(v);VA.save();}renderAllLists();document.getElementById('new-ptype').value='';}
-function addLevelName(){const v=document.getElementById('new-level').value.trim();if(!v)return;if(!VA.db.levelNames.includes(v)){VA.db.levelNames.push(v);VA.save();}renderAllLists();document.getElementById('new-level').value='';}
-function addSavedLoc(){const v=document.getElementById('new-loc').value.trim();if(!v)return;if(!VA.db.savedLocations.includes(v)){VA.db.savedLocations.push(v);VA.save();}renderAllLists();document.getElementById('new-loc').value='';}
+function addValuer(){const v=document.getElementById('new-valuer').value.trim();if(!v)return;if(!VA.db.valuers.includes(v)){VA.db.valuers.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-valuer').value='';}
+function addPropType(){const v=document.getElementById('new-ptype').value.trim();if(!v)return;if(!VA.db.propertyTypes.includes(v)){VA.db.propertyTypes.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-ptype').value='';}
+function addLevelName(){const v=document.getElementById('new-level').value.trim();if(!v)return;if(!VA.db.levelNames.includes(v)){VA.db.levelNames.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-level').value='';}
+function addSavedLoc(){const v=document.getElementById('new-loc').value.trim();if(!v)return;if(!VA.db.savedLocations.includes(v)){VA.db.savedLocations.push(v);VA.save();}renderAllLists(); renderCLList();document.getElementById('new-loc').value='';}
 
 // ══════════════════════════════════════════════════════════════
 //  CATEGORY MANAGER
@@ -725,18 +740,166 @@ function importTpls(inp){
 function exportAllData(){downloadBlob(new Blob([JSON.stringify(VA.db,null,2)],{type:'application/json'}),'valueaid-backup-'+new Date().toISOString().slice(0,10)+'.json');toast('Exported');}
 function importAllData(inp){
   const f=inp.files[0];if(!f)return;
-  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(confirm('Replace all current data?')){Object.assign(VA.db,d);VA.seed();VA.save();applyTheme(VA.db.settings?.theme||'light');renderAllLists();renderCatList();renderRLList();populateTplSelect();loadTplEditor();toast('Imported');}}catch{toast('Invalid file');}};r.readAsText(f);inp.value='';
+  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(confirm('Replace all current data?')){Object.assign(VA.db,d);VA.seed();VA.save();applyTheme(VA.db.settings?.theme||'light');renderAllLists(); renderCLList();renderCatList();renderRLList();populateTplSelect();loadTplEditor();toast('Imported');}}catch{toast('Invalid file');}};r.readAsText(f);inp.value='';
 }
 
 function dismissNotice(){document.getElementById('storage-notice').style.display='none';try{localStorage.setItem('va_notice_dismissed','1');}catch(e){}}
 
 pageInit();
-renderAllLists();
+renderAllLists(); renderCLList();
 renderCatList();
 renderRLList();
 populateTplSelect();
 loadTplEditor();
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
+
+// ═══════════════════════════════════════════════════════════════
+//  CHECKLIST MANAGER (Case Tracker pipelines)
+// ═══════════════════════════════════════════════════════════════
+let _clEditId = null;
+let _clEditData = { name:'', stages:[] };
+
+function renderCLList() {
+  const el = document.getElementById('cl-list'); if (!el) return;
+  const cls = VA.db.checklists || [];
+  if (!cls.length) { el.innerHTML='<p class="hint">No checklists. Tap + New to add one.</p>'; return; }
+  el.innerHTML = '';
+  cls.forEach((cl, ci) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;overflow:hidden';
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;padding:10px 12px;gap:8px;background:var(--sf2)';
+    const sp = document.createElement('span');
+    sp.style.cssText = 'flex:1;font-size:14px;font-weight:500';
+    sp.textContent = cl.name + (cl.name === 'Default' ? ' (built-in)' : '');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn bs bsm'; editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', () => openEditChecklist(cl.id));
+    hdr.appendChild(sp); hdr.appendChild(editBtn);
+    if (cl.name !== 'Default') {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn brd bsm'; delBtn.textContent = '✕';
+      delBtn.addEventListener('click', () => deleteChecklist(cl.id));
+      hdr.appendChild(delBtn);
+    }
+    wrap.appendChild(hdr);
+    const body = document.createElement('div');
+    body.style.cssText = 'padding:8px 12px;display:flex;flex-wrap:wrap;gap:5px';
+    cl.stages.forEach(st => {
+      const tag = document.createElement('span');
+      tag.style.cssText = 'background:var(--blbg);color:var(--bl);border-radius:10px;padding:2px 8px;font-size:12px';
+      tag.textContent = st;
+      body.appendChild(tag);
+    });
+    wrap.appendChild(body);
+    el.appendChild(wrap);
+  });
+}
+
+function openNewChecklist() {
+  _clEditId = null;
+  _clEditData = { name:'', stages:[] };
+  openChecklistEditor();
+}
+
+function openEditChecklist(id) {
+  const cl = (VA.db.checklists||[]).find(x => x.id === id); if (!cl) return;
+  _clEditId = id;
+  _clEditData = { name: cl.name, stages: [...cl.stages] };
+  openChecklistEditor();
+}
+
+function openChecklistEditor() {
+  const ovId = 'ov-cl-edit';
+  let ov = document.getElementById(ovId);
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.id = ovId;
+    ov.innerHTML = `<div class="sheet">
+      <div class="sheet-hdr"><h3 id="cl-edit-title">Checklist</h3></div>
+      <div class="sheet-body">
+        <div class="fg mb8"><label class="fl">Checklist Name</label>
+          <input type="text" id="cl-edit-name" placeholder="e.g. Standard Pipeline">
+        </div>
+        <div class="fg mb8"><label class="fl">Stages <span style="font-size:11px;color:var(--txmt)">(in order)</span></label>
+          <div id="cl-edit-stages"></div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <input type="text" id="cl-stage-inp" placeholder="Add stage..." style="flex:1">
+            <button class="btn bp bsm" onclick="clEditorAddStage()">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-footer">
+        <button class="btn bs" onclick="closeOv('${ovId}')">Cancel</button>
+        <button class="btn bp" style="flex:1" onclick="saveChecklistEditor()">Save</button>
+      </div>
+    </div>`;
+    ov.addEventListener('click', e => { if (e.target === ov) closeOv(ovId); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.activeElement?.id === 'cl-stage-inp') clEditorAddStage();
+    });
+    document.body.appendChild(ov);
+  }
+  document.getElementById('cl-edit-title').textContent = _clEditId ? 'Edit Checklist' : 'New Checklist';
+  document.getElementById('cl-edit-name').value = _clEditData.name;
+  renderCLEditStages();
+  openOv(ovId);
+}
+
+function renderCLEditStages() {
+  const el = document.getElementById('cl-edit-stages'); if (!el) return;
+  el.innerHTML = '';
+  _clEditData.stages.forEach((st, i) => {
+    const row = document.createElement('div');
+    row.className = 'ord-row';
+    const sp = document.createElement('span'); sp.className = 'ord-name'; sp.textContent = st;
+    const btns = document.createElement('div'); btns.className = 'ord-btns';
+    const up = document.createElement('button'); up.className = 'ord-btn'; up.textContent = '↑'; up.disabled = i === 0;
+    up.addEventListener('click', () => { const a=_clEditData.stages;[a[i],a[i-1]]=[a[i-1],a[i]];renderCLEditStages(); });
+    const dn = document.createElement('button'); dn.className = 'ord-btn'; dn.textContent = '↓'; dn.disabled = i === _clEditData.stages.length-1;
+    dn.addEventListener('click', () => { const a=_clEditData.stages;[a[i],a[i+1]]=[a[i+1],a[i]];renderCLEditStages(); });
+    const rm = document.createElement('button'); rm.className = 'btn bxs brd'; rm.textContent = '✕';
+    rm.addEventListener('click', () => { _clEditData.stages.splice(i,1); renderCLEditStages(); });
+    btns.appendChild(up); btns.appendChild(dn); btns.appendChild(rm);
+    row.appendChild(sp); row.appendChild(btns); el.appendChild(row);
+  });
+}
+
+function clEditorAddStage() {
+  const inp = document.getElementById('cl-stage-inp');
+  const v = (inp?.value||'').trim(); if (!v) return;
+  if (_clEditData.stages.includes(v)) { toast('"'+v+'" already exists'); inp.select(); return; }
+  _clEditData.stages.push(v); inp.value = ''; renderCLEditStages();
+}
+
+function saveChecklistEditor() {
+  const name = document.getElementById('cl-edit-name').value.trim();
+  if (!name) { toast('Please enter a checklist name'); return; }
+  if (!_clEditData.stages.length) { toast('Add at least one stage'); return; }
+  const dupName = (VA.db.checklists||[]).find(c => c.name.toLowerCase()===name.toLowerCase() && c.id!==_clEditId);
+  if (dupName) { toast('A checklist named "'+name+'" already exists'); return; }
+  if (_clEditId) {
+    const cl = (VA.db.checklists||[]).find(x=>x.id===_clEditId);
+    if (cl) { cl.name=name; cl.stages=[..._clEditData.stages]; }
+  } else {
+    if (!VA.db.checklists) VA.db.checklists = [];
+    VA.db.checklists.push({ id:VA.uid(), name, stages:[..._clEditData.stages] });
+  }
+  VA.save(); closeOv('ov-cl-edit'); renderCLList(); toast('Checklist saved');
+}
+
+function deleteChecklist(id) {
+  const cl = (VA.db.checklists||[]).find(x=>x.id===id); if (!cl) return;
+  const inUse = (VA.db.cases||[]).filter(c=>c.checklistId===id).length;
+  const msg = inUse
+    ? `Delete "${cl.name}"? It is used by ${inUse} case(s). Those cases will keep their current snapshots.`
+    : `Delete "${cl.name}"?`;
+  if (!confirm(msg)) return;
+  VA.db.checklists = VA.db.checklists.filter(x=>x.id!==id);
+  VA.save(); renderCLList(); toast('Checklist deleted');
+}
+
 </script>
 </body>
 </html>

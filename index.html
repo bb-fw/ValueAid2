@@ -18,7 +18,7 @@
   <header class="app-header">
     <a href="index.html" class="logo">ValueAid <span>Inspections</span></a>
     <div class="hdr-acts">
-      <button class="hbtn" onclick="toggleTheme()">&#9680;</button>
+      <a href="settings.html" class="hbtn">&#9881;</a>
     </div>
   </header>
 
@@ -43,10 +43,10 @@
   <button class="fab" onclick="openNewProject()" title="New Project">&#43;</button>
 
   <nav class="bottom-nav">
+    <a href="tracker.html" class="ni"><span class="ni-icon">&#128203;</span>Tracker</a>
     <a href="index.html" class="ni active"><span class="ni-icon">&#128196;</span>Inspect</a>
     <a href="travel.html" class="ni"><span class="ni-icon">&#128663;</span>Travel</a>
     <a href="calendar.html" class="ni"><span class="ni-icon">&#128197;</span>Calendar</a>
-    <a href="settings.html" class="ni"><span class="ni-icon">&#9881;</span>Settings</a>
   </nav>
 </div>
 <div id="toast"></div>
@@ -282,13 +282,48 @@ function createProject() {
     levels: [], createdAt: Date.now()
   };
   if (p.layout==='A') p.levels = [{id:VA.uid(),name:'Accommodation',rooms:[],notes:''}];
+  // Link to case if launched from tracker
+  const fromCaseId = document.getElementById('ov-new')?.dataset?.fromCase;
+  if (fromCaseId) {
+    const c = (VA.db.cases||[]).find(x => x.id === fromCaseId);
+    if (c) { p.caseId = c.id; c.projectId = p.id; delete document.getElementById('ov-new').dataset.fromCase; }
+  }
   VA.db.projects.push(p); VA.save();
   closeOv('ov-new');
   toast('Project created');
   setTimeout(() => location.href = 'editor.html?id='+p.id, 200);
 }
 
+function openNewProjectFromCase(c) {
+  const refInp = document.getElementById('np-ref');
+  const addrInp = document.getElementById('np-addr');
+  if (refInp && c.ref) refInp.value = c.ref;
+  if (addrInp && c.addr) addrInp.value = c.addr;
+  document.getElementById('ov-new').dataset.fromCase = c.id;
+  openOv('ov-new');
+}
+
 pageInit();
+
+// Handle redirect from case-editor "Create Project" button
+(function() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('fromCase')) {
+    try {
+      const pending = JSON.parse(sessionStorage.getItem('va_new_from_case')||'null');
+      if (pending && pending.caseId) {
+        const c = (VA.db.cases||[]).find(x => x.id === pending.caseId);
+        if (c) {
+          sessionStorage.removeItem('va_new_from_case');
+          openNewProjectFromCase(c);
+          history.replaceState(null, '', 'index.html');
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+})();
+
 renderProjects();
 </script>
 </body>

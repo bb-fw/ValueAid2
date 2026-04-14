@@ -5,7 +5,7 @@
 const CACHE = 'valueaid-v3.5.0';
 
 const ASSETS = [
-  './', './index.html', './editor.html', './travel.html',
+  './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
   './calendar.html', './settings.html',
   './css/styles.css', './js/db.js', './js/ui.js', './js/picker.js', './js/editor-core.js', './js/editor-findings.js', './js/editor-notes.js', './js/editor-camera.js', './css/editor.css',
   './js/export.js', './manifest.json',
