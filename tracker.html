@@ -190,10 +190,12 @@ function renderCases() {
     return;
   }
 
-  el.innerHTML = cases.map(c => {
+  const sectionHeader = (label, color) =>
+    `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--txmt);padding:12px 2px 5px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>${label}</div>`;
+
+  const cardHtml = c => {
     const st = caseStatus(c);
     const dl = deadlineLabel(c.deadline);
-    // Side colour maps to status
     const sideMap = { 'badge-assigned':'assigned', 'badge-progress':'progress', 'badge-delayed':'delayed', 'badge-complete':'complete' };
     const sideCls = sideMap[st.cls]||'assigned';
     const inspMeta = c.inspDate ? `<span>&#128197; ${VA.fmtDate(c.inspDate)}</span>` : '';
@@ -219,7 +221,16 @@ function renderCases() {
         </div>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  const active = cases.filter(c => !isCompletedCase(c));
+  const completed = cases.filter(c => isCompletedCase(c));
+  let html = active.map(cardHtml).join('');
+  if (completed.length) {
+    html += sectionHeader('Completed', 'var(--gn)');
+    html += completed.map(cardHtml).join('');
+  }
+  el.innerHTML = html;
 }
 
 function newCase() {

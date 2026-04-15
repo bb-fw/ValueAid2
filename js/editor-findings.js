@@ -197,8 +197,12 @@ function openRoomPicker(li) {
     },
     (cr) => { if(!p.levels[li].rooms)p.levels[li].rooms=[]; if(!p.levels[li].rooms.includes(cr))p.levels[li].rooms.push(cr); },
     () => {
+      // Re-sort selected rooms to match the master list order
+      const ordered = allItems.filter(r => (p.levels[li].rooms||[]).includes(r));
+      const custom = (p.levels[li].rooms||[]).filter(r => !allItems.includes(r));
+      p.levels[li].rooms = [...ordered, ...custom];
       const el=document.getElementById('rooms-prev-'+li);
-      if(el){const rv=(p.levels[li].rooms||[]);el.innerHTML=rv.length?rv.map(r=>`<span class="sel-tag">${VA.esc(r)}</span>`).join(''):'<span style="font-size:12px;color:var(--txmt);font-style:italic">No rooms selected</span>';}
+      if(el){const rv=p.levels[li].rooms;el.innerHTML=rv.length?rv.map(r=>`<span class="sel-tag">${VA.esc(r)}</span>`).join(''):'<span style="font-size:12px;color:var(--txmt);font-style:italic">No rooms selected</span>';}
       VA.save();
     }
   );

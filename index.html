@@ -251,7 +251,8 @@ function pickLayout(l) {
 function openNewProject() {
   newLayout = 'A'; pickLayout('A');
   const now = new Date();
-  document.getElementById('np-date').value = now.toISOString().slice(0,10);
+  const _y=now.getFullYear(),_m=String(now.getMonth()+1).padStart(2,'0'),_d=String(now.getDate()).padStart(2,'0');
+  document.getElementById('np-date').value = _y+'-'+_m+'-'+_d;
   document.getElementById('np-time').value = now.toTimeString().slice(0,5);
   ['np-ref','np-addr','np-storeys'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('np-occ').value = '';
@@ -304,15 +305,21 @@ function createProject() {
 }
 
 function openNewProjectFromCase(c) {
+  // Open the project sheet normally first (populates dropdowns + template)
+  openNewProject();
+  // Then override fields with case data
   const set = (id,val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
-  set('np-ref',c.ref); set('np-addr',c.addr);
-  set('np-date',c.inspDate); set('np-time',c.inspTime);
+  set('np-ref', c.ref);
+  set('np-addr', c.addr);
+  set('np-date', c.inspDate);
+  set('np-time', c.inspTime);
+  // Property type: match by text since options are now populated
   if (c.ptype) {
     const sel = document.getElementById('np-ptype');
-    if (sel) [...sel.options].forEach(o => { if(o.text===c.ptype) sel.value=o.value; });
+    if (sel) [...sel.options].forEach(o => { if(o.text===c.ptype||o.value===c.ptype) sel.value=o.value; });
   }
+  // Store caseId for linking after creation
   document.getElementById('ov-new').dataset.fromCase = c.id;
-  openOv('ov-new');
 }
 
 pageInit();
