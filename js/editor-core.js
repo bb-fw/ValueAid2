@@ -38,13 +38,10 @@ function buildEditor(p) {
     <div class="fg"><label class="fl">Property Type</label>
       <div style="display:flex;gap:6px"><select id="ed-ptype" style="flex:1" onchange="autoSave()"></select><button class="btn bs bsm" onclick="openPtypeMgr()">Edit</button></div>
     </div>
-    <div class="r2">
-      <div class="fg"><label class="fl">No. of Storeys</label><input type="number" id="ed-storeys" value="${p.storeys||''}" min="1" oninput="autoSave()"></div>
-      <div class="fg"><label class="fl">Occupancy</label>
-        <select id="ed-occ" onchange="autoSave()"><option value="">— Select —</option>
-        ${['Owner-Occupied','Tenanted','Vacant','Partially Owner-Occupied & Tenanted','Partially Owner-Occupied & Vacant','Partially Tenanted & Vacant','N.A.'].map(o=>`<option${p.occ===o?' selected':''}>${VA.esc(o)}</option>`).join('')}
-        </select>
-      </div>
+    <div class="fg"><label class="fl">Occupancy</label>
+      <select id="ed-occ" onchange="autoSave()"><option value="">— Select —</option>
+      ${['Owner-Occupied','Tenanted','Vacant','Partially Owner-Occupied & Tenanted','Partially Owner-Occupied & Vacant','Partially Tenanted & Vacant','N.A.'].map(o=>`<option${p.occ===o?' selected':''}>${VA.esc(o)}</option>`).join('')}
+      </select>
     </div>
     <div class="fg"><label class="fl">Property Address</label><input type="text" id="ed-addr" value="${VA.esc(p.addr||'')}" oninput="autoSave()"></div>
     <div class="fg"><label class="fl">Condition</label>
@@ -57,6 +54,7 @@ function buildEditor(p) {
       <button id="hdb-tog" class="toggle${p.isHDB?' on':''}" onclick="toggleHDB()" style="flex-shrink:0"></button>
     </div>
     <div id="hdb-fields" style="display:${p.isHDB?'block':'none'}">
+      <div class="fg mt8"><label class="fl">No. of Storeys</label><input type="number" id="ed-storeys" value="${p.storeys||''}" min="1" oninput="autoSave()"></div>
       <div class="r2 mt8">
         <div class="fg"><label class="fl">Recess Area (m²)</label><input type="number" id="ed-recess" oninput="autoSave()" value="${VA.esc(p.recess||'')}" min="0" step="0.1" placeholder="e.g. 2.5"></div>
         <div class="fg">

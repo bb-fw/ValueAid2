@@ -2,7 +2,7 @@
 // The cache name change triggers automatic old-cache deletion
 // and forces fresh files to be fetched from the server.
 // localStorage (app data) is never touched by this process.
-const CACHE = 'valueaid-v1.1.5';
+const CACHE = 'valueaid-v1.1.6';
 
 const ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',

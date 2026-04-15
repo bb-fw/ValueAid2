@@ -148,6 +148,9 @@ function buildCase(c) {
 
     '<div class="fg"><label class="fl">Mobile No.</label>' +
     '<input type="tel" id="ce-phone" placeholder="e.g. 9123 4567" value="' + VA.esc(formatPhoneVal(c.phone||'')) + '" oninput="cePhoneInput(this)"></div>' +
+    '<div class="fg"><label class="fl">Property Type</label><select id="ce-ptype" onchange="ceSave()"><option value="">— Select —</option>' +
+    VA.db.propertyTypes.map(t2 => '<option' + (c.ptype===t2?' selected':'') + '>' + VA.esc(t2) + '</option>').join('') +
+    '</select></div>' +
 
     '<div class="r2">' +
     '<div class="fg"><label class="fl">Inspection Date</label><input type="date" id="ce-inspdate" value="' + (c.inspDate||'') + '" onchange="ceSave()"></div>' +
@@ -323,6 +326,7 @@ function ceSave() {
   if (vt('ce-addr')!==undefined)    { c.addr=vt('ce-addr'); syncP('addr',c.addr); }
   if (vt('ce-client')!==undefined)  c.client=vt('ce-client');
   if (vt('ce-phone')!==undefined)   c.phone=vt('ce-phone');
+  if (v('ce-ptype')!==undefined)    c.ptype=v('ce-ptype');
   if (v('ce-inspdate')!==undefined) { c.inspDate=v('ce-inspdate'); syncP('date',c.inspDate); }
   if (v('ce-insptime')!==undefined) { c.inspTime=v('ce-insptime'); syncP('time',c.inspTime); }
   if (v('ce-created')!==undefined)  c.createdAt=v('ce-created');

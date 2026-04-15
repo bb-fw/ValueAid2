@@ -91,8 +91,8 @@
       </div>
       <!-- Driving: ERP (end only) -->
       <div class="fg" id="erp-row" style="display:none">
-        <label class="fl">ERP Charges (S$)</label>
-        <input type="number" id="e-erp" min="0" step="0.50" placeholder="e.g. 2.50">
+        <label class="fl">ERP</label>
+        <div class="mchk" id="erp-chip" onclick="this.classList.toggle('on')">&#128682; Has ERP</div>
       </div>
       <!-- Taxi/Grab: fare (end only) -->
       <div class="fg" id="taxi-row" style="display:none">
@@ -141,8 +141,8 @@
         <div class="mchk" id="epark-chip" onclick="this.classList.toggle('on')">&#128663; Has Parking</div>
       </div>
       <div class="fg" id="eerp-row" style="display:none">
-        <label class="fl">ERP Charges (S$)</label>
-        <input type="number" id="et-erp" min="0" step="0.50" placeholder="e.g. 2.50">
+        <label class="fl">ERP</label>
+        <div class="mchk" id="eerp-chip" onclick="this.classList.toggle('on')">&#128682; Has ERP</div>
       </div>
       <!-- Taxi fields -->
       <div class="fg" id="etaxi-row" style="display:none">
@@ -189,13 +189,13 @@ function buildCard(t, active) {
   const et = t.endTime ? VA.fmtTime(new Date(t.endTime)) : null;
   const extras = [];
   if (t.hasParking) extras.push('<span class="method-badge" style="background:var(--gnbg);color:var(--gn)">&#128663; Parking</span>');
-  if (t.hasERP) extras.push(`<span class="method-badge" style="background:var(--rdbg);color:var(--rd)">ERP S$${(+(t.erpAmt||0)||0).toFixed(2)}</span>`);
+  if (t.hasERP) extras.push('<span class="method-badge" style="background:var(--rdbg);color:var(--rd)">&#128682; ERP</span>');
   if (t.taxiFare) extras.push(`<span class="method-badge" style="background:var(--ambg);color:var(--am)">&#128664; S$${(+(t.taxiFare||0)||0).toFixed(2)}</span>`);
   if (t.distKm) extras.push(`<span class="method-badge">${(+(t.distKm||0)||0).toFixed(1)} km</span>`);
   return `<div class="travel-card">
     <div class="tc-hdr"${active?' style="background:var(--ambg)"':''}>
       <div class="tc-route">
-        <div class="tc-ft">${VA.esc(t.from||'?')}<span class="tc-arr">&#8594;</span>${VA.esc(t.to||'In progress...')}</div>
+        <div class="tc-ft" style="flex-direction:column;align-items:flex-start;gap:1px"><span>${VA.esc(t.from||'?')}</span><span style="font-size:12px;color:var(--txmt);font-weight:500">${t.to ? '&#8594; '+VA.esc(t.to) : '<i>In progress...</i>'}</span></div>
         <div class="tc-time">${st}${et?' — '+et:' (ongoing)'}${dur?' &bull; '+dur:''}</div>
       </div>
       <div style="display:flex;gap:5px;flex-shrink:0">
@@ -248,7 +248,8 @@ function openEndTravel() {
   document.getElementById('erp-row').style.display=isDriving?'block':'none';
   document.getElementById('taxi-row').style.display=isTaxi?'block':'none';
   const pc=document.getElementById('park-chip');if(pc)pc.classList.remove('on');
-  ['e-erp','e-taxi'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const ec=document.getElementById('erp-chip');if(ec)ec.classList.remove('on');
+  const tai=document.getElementById('e-taxi');if(tai)tai.value='';
   openOv('ov-end');
 }
 function endTrip() {
@@ -258,8 +259,8 @@ function endTrip() {
   trip.to=document.getElementById('e-dest').value.trim()||trip.to;
   trip.date=now.toISOString().slice(0,10);
   trip.hasParking=document.getElementById('park-chip')?.classList.contains('on')||false;
-  trip.hasERP=!!(document.getElementById('e-erp')?.value);
-  trip.erpAmt=document.getElementById('e-erp')?.value||'';
+  trip.hasERP=document.getElementById('erp-chip')?.classList.contains('on')||false;
+  trip.erpAmt='';
   trip.taxiFare=document.getElementById('e-taxi')?.value||'';
   VA.save();closeOv('ov-end');updateBanner();renderTravels();toast('Trip ended: '+VA.fmtTime(now));
 }
@@ -273,7 +274,7 @@ function openEditTrip(id) {
   document.getElementById('et-notes').value=t.notes||'';
   document.getElementById('et-date').value=t.date||'';
   document.getElementById('et-dist').value=t.distKm||'';
-  document.getElementById('et-erp').value=t.erpAmt||'';
+  const eepc=document.getElementById('eerp-chip');if(eepc)eepc.classList.toggle('on',!!t.hasERP);
   document.getElementById('et-taxi').value=t.taxiFare||'';
   if(t.startTime)document.getElementById('et-start').value=VA.fmtTime(new Date(t.startTime));
   else document.getElementById('et-start').value='';
@@ -291,8 +292,8 @@ function saveEditTrip() {
   t.methods=getSelectedMethods('methods-edit');
   t.distKm=document.getElementById('et-dist').value||'';
   t.hasParking=document.getElementById('epark-chip')?.classList.contains('on')||false;
-  t.erpAmt=document.getElementById('et-erp').value||'';
-  t.hasERP=!!t.erpAmt;
+  t.hasERP=document.getElementById('eerp-chip')?.classList.contains('on')||false;
+  t.erpAmt='';
   t.taxiFare=document.getElementById('et-taxi').value||'';
   const dt=document.getElementById('et-date').value;if(dt)t.date=dt;
   const st=document.getElementById('et-start').value;

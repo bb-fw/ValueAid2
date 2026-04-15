@@ -173,7 +173,11 @@ function renderCases() {
     );
   }
 
+  const isCompletedCase = c => { const stg = getStages(c); return c.stage && c.stage === stg[stg.length-1]; };
   cases.sort((a,b) => {
+    // Completed cases always last
+    const ac = isCompletedCase(a) ? 1 : 0, bc = isCompletedCase(b) ? 1 : 0;
+    if (ac !== bc) return ac - bc;
     const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
     if (da !== db2) return da < db2 ? -1 : 1;
     return (b.createdAt||'') < (a.createdAt||'') ? -1 : 1;
