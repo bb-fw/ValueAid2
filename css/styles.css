@@ -171,7 +171,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .travel-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:8px;overflow:hidden}
 .tc-hdr{padding:11px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)}
 .tc-route{flex:1;min-width:0}
-.tc-ft{font-size:14px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-ft{font-size:14px;font-weight:600}
 .tc-arr{color:var(--txmt);font-size:11px;flex-shrink:0}
 .tc-time{font-size:12px;color:var(--txmt);margin-top:2px}
 .tc-methods{display:flex;flex-wrap:wrap;gap:3px;padding:8px 12px}

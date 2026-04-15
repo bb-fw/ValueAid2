@@ -97,7 +97,7 @@ const gC = () => (VA.db.cases||[]).find(x => x.id === cid);
 function addDays(date, days) {
   const d = new Date(date + 'T00:00:00');
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return localISO(d);
 }
 
 function getLinkConflicts(c, p) {
@@ -150,6 +150,9 @@ function buildCase(c) {
     '<input type="tel" id="ce-phone" placeholder="e.g. 9123 4567" value="' + VA.esc(formatPhoneVal(c.phone||'')) + '" oninput="cePhoneInput(this)"></div>' +
     '<div class="fg"><label class="fl">Property Type</label><select id="ce-ptype" onchange="ceSave()"><option value="">— Select —</option>' +
     VA.db.propertyTypes.map(t2 => '<option' + (c.ptype===t2?' selected':'') + '>' + VA.esc(t2) + '</option>').join('') +
+    '</select></div>' +
+    '<div class="fg"><label class="fl">Source</label><select id="ce-source" onchange="ceSave()"><option value="">— Select —</option>' +
+    ['DBS-LO', 'OCBC', 'Maybank', 'HSBC', 'DBS', 'UOB', 'RHB', 'CIMB', 'SBI', 'External', 'Others'].map(src => '<option' + (c.source===src?' selected':'') + '>' + VA.esc(src) + '</option>').join('') +
     '</select></div>' +
 
     '<div class="r2">' +
@@ -308,7 +311,7 @@ function ceRefInput(val) {
 // ── Deadline quick set ────────────────────────────────────────
 function setDeadlineQuick(n) {
   const c = gC(); if (!c) return;
-  const base = c.createdAt || new Date().toISOString().slice(0,10);
+  const base = c.createdAt || localISO(new Date());
   const dl = addDays(base, n);
   const inp = document.getElementById('ce-deadline'); if (!inp) return;
   inp.value = dl; ceSave();
@@ -322,13 +325,14 @@ function ceSave() {
   const syncP = (field, val) => {
     if (c.projectId) { const p=VA.db.projects.find(x=>x.id===c.projectId); if(p) p[field]=val; }
   };
-  if (vt('ce-ref')!==undefined)     { c.ref=vt('ce-ref'); syncP('ref',c.ref); }
-  if (vt('ce-addr')!==undefined)    { c.addr=vt('ce-addr'); syncP('addr',c.addr); }
+  if (vt('ce-ref')!==undefined)     { c.ref=vt('ce-ref'); if(c.ref) syncP('ref',c.ref); }
+  if (vt('ce-addr')!==undefined)    { c.addr=vt('ce-addr'); if(c.addr) syncP('addr',c.addr); }
   if (vt('ce-client')!==undefined)  c.client=vt('ce-client');
   if (vt('ce-phone')!==undefined)   c.phone=vt('ce-phone');
   if (v('ce-ptype')!==undefined)    c.ptype=v('ce-ptype');
-  if (v('ce-inspdate')!==undefined) { c.inspDate=v('ce-inspdate'); syncP('date',c.inspDate); }
-  if (v('ce-insptime')!==undefined) { c.inspTime=v('ce-insptime'); syncP('time',c.inspTime); }
+  if (v('ce-source')!==undefined)   c.source=v('ce-source');
+  if (v('ce-inspdate')!==undefined) { c.inspDate=v('ce-inspdate'); if(c.inspDate) syncP('date',c.inspDate); }
+  if (v('ce-insptime')!==undefined) { c.inspTime=v('ce-insptime'); if(c.inspTime) syncP('time',c.inspTime); }
   if (v('ce-created')!==undefined)  c.createdAt=v('ce-created');
   if (v('ce-deadline')!==undefined) c.deadline=v('ce-deadline');
   if (v('ce-notes')!==undefined)    c.notes=v('ce-notes');

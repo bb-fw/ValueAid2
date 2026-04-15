@@ -29,6 +29,7 @@ function exportProjectPDF(p) {
     ['Date of Inspection', (p.date ? VA.fmtDate(p.date) : '—') + (p.time ? '  at  '+p.time : '')],
     ['Valuer-in-Charge', p.valuer || '—'],
     ['Property Type', p.ptype || '—'],
+    ['Source', p.source || '—'],
     ['No. of Storeys', p.storeys || '—'],
     ['Occupancy', p.occ || '—'],
     ['Condition', p.cond || '—'],

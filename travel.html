@@ -192,24 +192,23 @@ function buildCard(t, active) {
   if (t.hasERP) extras.push('<span class="method-badge" style="background:var(--rdbg);color:var(--rd)">&#128682; ERP</span>');
   if (t.taxiFare) extras.push(`<span class="method-badge" style="background:var(--ambg);color:var(--am)">&#128664; S$${(+(t.taxiFare||0)||0).toFixed(2)}</span>`);
   if (t.distKm) extras.push(`<span class="method-badge">${(+(t.distKm||0)||0).toFixed(1)} km</span>`);
-  const allBadges = [
-    ...(t.methods||[]).map(m=>`<span class="method-badge">${VA.esc(m)}</span>`),
-    ...extras
-  ].join('');
+  // Build plain-text extras (no bubbles)
+  const extraTxt = [];
+  if (t.methods&&t.methods.length) extraTxt.push(t.methods.join(', '));
+  if (t.hasParking) extraTxt.push('Parking');
+  if (t.hasERP) extraTxt.push('ERP');
+  if (t.taxiFare) extraTxt.push('Taxi S$'+(+(t.taxiFare||0)||0).toFixed(2));
+  if (t.distKm) extraTxt.push((+(t.distKm||0)||0).toFixed(1)+' km');
+  const metaLine = [st+(et?' — '+et:' (ongoing)')+(dur?' &bull; '+dur:''), ...extraTxt].filter(Boolean).join(' &bull; ');
   return `<div class="travel-card">
     <div class="tc-hdr"${active?' style="background:var(--ambg)"':''}>
       <div class="tc-route" style="flex:1;min-width:0">
-        <div style="display:flex;align-items:baseline;gap:6px;min-width:0">
-          <span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${VA.esc(t.from||'?')}</span>
-          ${t.to?`<span style="font-size:11px;color:var(--txmt);flex-shrink:0">&#8594; ${VA.esc(t.to)}</span>`:`<span style="font-size:11px;color:var(--txmt);font-style:italic">In progress...</span>`}
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:3px">
-          <span style="font-size:11px;color:var(--txmt)">${st}${et?' — '+et:' (ongoing)'}${dur?' &bull; '+dur:''}</span>
-          ${allBadges}
-        </div>
-        ${t.notes?`<div style="font-size:11px;color:var(--txmt);margin-top:2px">${VA.esc(t.notes)}</div>`:''}
+        <div class="tc-ft"><span>${VA.esc(t.from||'?')}</span></div>
+        ${t.to?`<div style="font-size:12px;color:var(--txmt);margin-top:1px">&#8594; ${VA.esc(t.to)}</div>`:`<div style="font-size:12px;color:var(--txmt);font-style:italic;margin-top:1px">In progress...</div>`}
+        <div class="tc-time">${metaLine}</div>
+        ${t.notes?`<div style="font-size:11px;color:var(--txmt);margin-top:1px">${VA.esc(t.notes)}</div>`:''}
       </div>
-      <div style="display:flex;gap:5px;flex-shrink:0;align-items:center">
+      <div style="display:flex;gap:5px;flex-shrink:0;align-items:center;margin-left:8px">
         ${active?`<button class="btn bsm" style="background:var(--gd);color:#fff;border:none;padding:5px 10px" onclick="openEndTravel()">End</button>`:''}
         <button class="btn bxs bs" onclick="openEditTrip('${t.id}')">Edit</button>
         ${!active?`<button class="btn bxs brd" onclick="delTrip('${t.id}')">&#10005;</button>`:''}
@@ -238,7 +237,7 @@ function startTrip() {
     distKm:document.getElementById('s-dist').value||'',
     notes:document.getElementById('s-notes').value.trim(),
     startTime:now.toISOString(),endTime:null,
-    date:now.toISOString().slice(0,10),
+    date:localISO(now),
     hasParking:false,hasERP:false,erpAmt:'',taxiFare:''
   };
   VA.db.travels.push(t);VA.save();closeOv('ov-start');updateBanner();renderTravels();toast('Trip started: '+VA.fmtTime(now));
@@ -266,7 +265,7 @@ function endTrip() {
   const now=new Date();
   trip.endTime=now.toISOString();
   trip.to=document.getElementById('e-dest').value.trim()||trip.to;
-  trip.date=now.toISOString().slice(0,10);
+  trip.date=localISO(now);
   trip.hasParking=document.getElementById('park-chip')?.classList.contains('on')||false;
   trip.hasERP=document.getElementById('erp-chip')?.classList.contains('on')||false;
   trip.erpAmt='';
@@ -316,6 +315,7 @@ function saveEditTrip() {
 }
 function delTrip(id){if(!confirm('Delete this trip?'))return;VA.db.travels=VA.db.travels.filter(t=>t.id!==id);VA.save();updateBanner();renderTravels();}
 
+function localISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
 pageInit();
 renderTravels();
 </script>

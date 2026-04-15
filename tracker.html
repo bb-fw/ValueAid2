@@ -141,6 +141,7 @@ function pipelineBar(c) {
 }
 
 // ── Render stats bar ─────────────────────────────────────────
+const isCaseComplete = c => { const stg=getStages(c); return c.stage && c.stage===stg[stg.length-1]; };
 function renderStats() {
   const el = document.getElementById('stats-bar'); if (!el) return;
   const all = VA.db.cases||[];
@@ -173,10 +174,9 @@ function renderCases() {
     );
   }
 
-  const isCompletedCase = c => { const stg = getStages(c); return c.stage && c.stage === stg[stg.length-1]; };
   cases.sort((a,b) => {
     // Completed cases always last
-    const ac = isCompletedCase(a) ? 1 : 0, bc = isCompletedCase(b) ? 1 : 0;
+    const ac = isCaseComplete(a) ? 1 : 0, bc = isCaseComplete(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
     const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
     if (da !== db2) return da < db2 ? -1 : 1;
@@ -223,8 +223,8 @@ function renderCases() {
     </div>`;
   };
 
-  const active = cases.filter(c => !isCompletedCase(c));
-  const completed = cases.filter(c => isCompletedCase(c));
+  const active = cases.filter(c => !isCaseComplete(c));
+  const completed = cases.filter(c => isCaseComplete(c));
   let html = active.map(cardHtml).join('');
   if (completed.length) {
     html += sectionHeader('Completed', 'var(--gn)');

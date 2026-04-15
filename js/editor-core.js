@@ -38,6 +38,11 @@ function buildEditor(p) {
     <div class="fg"><label class="fl">Property Type</label>
       <div style="display:flex;gap:6px"><select id="ed-ptype" style="flex:1" onchange="autoSave()"></select><button class="btn bs bsm" onclick="openPtypeMgr()">Edit</button></div>
     </div>
+    <div class="fg"><label class="fl">Source</label>
+      <select id="ed-source" onchange="autoSave()"><option value="">— Select —</option>
+      ${['DBS-LO', 'OCBC', 'Maybank', 'HSBC', 'DBS', 'UOB', 'RHB', 'CIMB', 'SBI', 'External', 'Others'].map(src=>`<option${p.source===src?' selected':''}>${VA.esc(src)}</option>`).join('')}
+      </select>
+    </div>
     <div class="fg"><label class="fl">Occupancy</label>
       <select id="ed-occ" onchange="autoSave()"><option value="">— Select —</option>
       ${['Owner-Occupied','Tenanted','Vacant','Partially Owner-Occupied & Tenanted','Partially Owner-Occupied & Vacant','Partially Tenanted & Vacant','N.A.'].map(o=>`<option${p.occ===o?' selected':''}>${VA.esc(o)}</option>`).join('')}
@@ -125,6 +130,7 @@ function readEd() {
   if(v('ed-occ')!==undefined) p.occ=v('ed-occ');
   if(vt('ed-addr')!==undefined) p.addr=vt('ed-addr');
   if(v('ed-cond')!==undefined) p.cond=v('ed-cond');
+  if(v('ed-source')!==undefined) p.source=v('ed-source');
   if(v('ed-remarks')!==undefined) p.remarks=v('ed-remarks');
   if (p.isHDB) {
     if(v('ed-recess')!==undefined) p.recess=v('ed-recess');
@@ -184,10 +190,11 @@ function autoSave() {
   if (p.caseId) {
     const c = (VA.db.cases||[]).find(x => x.id === p.caseId);
     if (c) {
-      if (p.ref !== undefined) c.ref = p.ref;
-      if (p.addr !== undefined) c.addr = p.addr;
-      if (p.date !== undefined) c.inspDate = p.date;
-      if (p.time !== undefined) c.inspTime = p.time;
+      // Only sync non-empty values — prevents clearing case data when project field is blank
+      if (p.ref)  c.ref = p.ref;
+      if (p.addr) c.addr = p.addr;
+      if (p.date) c.inspDate = p.date;
+      if (p.time) c.inspTime = p.time;
     }
   }
   VA.save();
