@@ -92,12 +92,6 @@
           <button class="btn bs bsm" onclick="openPtypeMgr()">Edit</button>
         </div>
       </div>
-      <div class="fg"><label class="fl">Source</label>
-        <select id="np-source">
-          <option value="">— Select —</option>
-          <option>DBS-LO</option><option>OCBC</option><option>Maybank</option><option>HSBC</option><option>DBS</option><option>UOB</option><option>RHB</option><option>CIMB</option><option>SBI</option><option>External</option><option>Others</option>
-        </select>
-      </div>
       <div class="r2">
         <div class="fg"><label class="fl">No. of Storeys</label><input type="number" id="np-storeys" min="1" max="99" placeholder="1"></div>
         <div class="fg"><label class="fl">Occupancy</label>
@@ -263,7 +257,6 @@ function openNewProject() {
   ['np-ref','np-addr','np-storeys'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('np-occ').value = '';
   document.getElementById('np-cond').value = '';
-  document.getElementById('np-source').value = '';
   refreshValuerDrop(); refreshPtypeDrop();
   // Template dropdown
   VA.seed();
@@ -290,7 +283,6 @@ function createProject() {
     time: document.getElementById('np-time').value,
     valuer: document.getElementById('np-valuer').value,
     ptype: document.getElementById('np-ptype').value,
-    source: document.getElementById('np-source').value,
     storeys: document.getElementById('np-storeys').value,
     occ: document.getElementById('np-occ').value,
     addr, cond: document.getElementById('np-cond').value,
@@ -327,7 +319,6 @@ function openNewProjectFromCase(c) {
     if (sel) [...sel.options].forEach(o => { if(o.text===c.ptype||o.value===c.ptype) sel.value=o.value; });
   }
   // Store caseId for linking after creation
-  if (c.source) { const ss=document.getElementById('np-source'); if(ss) ss.value=c.source; }
   document.getElementById('ov-new').dataset.fromCase = c.id;
 }
 

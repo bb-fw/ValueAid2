@@ -59,10 +59,10 @@
 
       <!-- CHECKLIST -->
       <div class="card mb12">
-        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Checklist</h3><span class="chev">&#9660;</span></div>
+        <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Progress Markers</h3><span class="chev">&#9660;</span></div>
         <div class="card-collapse-body">
-          <p class="hint mb8">Pipeline stages used when creating new cases. Each case takes a snapshot of the chosen checklist.</p>
-          <button class="btn bp bsm mb8" onclick="openNewChecklist()">+ New Checklist</button>
+          <p class="hint mb8">Define the progress stages used in the Case Tracker. Each new case takes a snapshot of the selected marker set.</p>
+          <button class="btn bp bsm mb8" onclick="openNewChecklist()">+ New Marker Set</button>
           <div id="cl-list"></div>
         </div>
       </div>
@@ -766,6 +766,7 @@ renderCatList();
 renderRLList();
 populateTplSelect();
 loadTplEditor();
+renderCLList();
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
 
 // ═══════════════════════════════════════════════════════════════
@@ -856,7 +857,7 @@ function openChecklistEditor() {
     });
     document.body.appendChild(ov);
   }
-  document.getElementById('cl-edit-title').textContent = _clEditId ? 'Edit Checklist' : 'New Checklist';
+  document.getElementById('cl-edit-title').textContent = _clEditId ? 'Edit Marker Set' : 'New Marker Set';
   document.getElementById('cl-edit-name').value = _clEditData.name;
   renderCLEditStages();
   openOv(ovId);

@@ -405,6 +405,7 @@ pageInit();
 document.querySelectorAll('.overlay').forEach(el=>{
   el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});
 });
+function localISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
 cid=new URLSearchParams(location.search).get('id');
 const kase=gC();
 if(kase){buildCase(kase);}
