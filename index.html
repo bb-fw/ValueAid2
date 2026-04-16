@@ -160,34 +160,16 @@ function condBadge(c) {
 
 let searchQuery = '';
 
-let _archiveMenuOpen = null;
-function toggleProjMenu(id, e) {
-  e.stopPropagation();
-  const menu = document.getElementById('pmenu-' + id);
-  if (!menu) return;
-  const wasOpen = menu.classList.contains('open');
-  closeProjMenus();
-  if (!wasOpen) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    menu.style.top = (rect.bottom + 4) + 'px';
-    const left = Math.min(rect.right - 160, window.innerWidth - 168);
-    menu.style.left = Math.max(8, left) + 'px';
-    menu.classList.add('open');
-    _archiveMenuOpen = id;
-  }
+let _archivedExpanded = false;
+function toggleArchivedSection() {
+  _archivedExpanded = !_archivedExpanded;
+  renderProjects();
 }
-function closeProjMenus() {
-  if (_archiveMenuOpen) {
-    document.getElementById('pmenu-' + _archiveMenuOpen)?.classList.remove('open');
-    _archiveMenuOpen = null;
-  }
-}
-document.addEventListener('click', closeProjMenus);
 
 function archiveProject(id) {
   const p = VA.db.projects.find(x => x.id === id); if (!p) return;
   const catCount = (p.cats||[]).reduce((n,c)=>(c.items||[]).length+n, 0);
-  const selCount = (p.cats||[]).reduce((n,c)=>(c.items||[]).filter(i=>i.sel||(i.notes&&i.notes.trim())).length+n, 0);
+  const selCount  = (p.cats||[]).reduce((n,c)=>(c.items||[]).filter(i=>i.sel||(i.notes&&i.notes.trim())).length+n, 0);
   const trimmed = catCount - selCount;
   const msg = `Archive "${p.addr||'this project'}"?\n\nThis will:\n• Make it read-only\n• Remove ${trimmed} unselected blank items to save space\n• Move it to the Archived section\n\nYou can unarchive later, but the removed items cannot be recovered.`;
   if (!confirm(msg)) return;
@@ -206,18 +188,9 @@ function unarchiveProject(id) {
 function deleteProject(id) {
   const p = VA.db.projects.find(x => x.id === id); if (!p) return;
   if (!confirm(`Delete "${p.addr||'this project'}"? This cannot be undone.`)) return;
-  // Unlink from case if linked
   if (p.caseId) { const c=(VA.db.cases||[]).find(x=>x.id===p.caseId); if(c) delete c.projectId; }
   VA.db.projects = VA.db.projects.filter(x => x.id !== id);
-  VA.save();
-  renderProjects();
-  toast('Project deleted');
-}
-
-let _archivedExpanded = false;
-function toggleArchivedSection() {
-  _archivedExpanded = !_archivedExpanded;
-  renderProjects();
+  VA.save(); renderProjects(); toast('Project deleted');
 }
 
 function renderProjects() {
@@ -234,7 +207,7 @@ function renderProjects() {
     );
   }
   const active   = sorted.filter(p => !p.archived);
-  const archived = sorted.filter(p => p.archived);
+  const archived = sorted.filter(p =>  p.archived);
   document.getElementById('proj-count').textContent = 'Projects (' + active.length + ')';
   if (!active.length && !archived.length) {
     el.innerHTML = db.projects.length
@@ -244,42 +217,26 @@ function renderProjects() {
   }
   const today = (()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
   const upcoming  = active.filter(p => !p.date || p.date >= today);
-  const inspected = active.filter(p => p.date && p.date < today);
+  const inspected = active.filter(p =>  p.date && p.date < today);
 
-  const cardHtml = p => {
-    const isArchived = !!p.archived;
-    const menuId = 'pmenu-' + p.id;
-    return `<div class="proj-card" onclick="location.href='editor.html?id=${p.id}'" style="${isArchived?'opacity:.65':''}">
-      <div class="pc-icon" style="${isArchived?'color:var(--txmt)':''}">
-        ${isArchived ? '&#128274;' : (p.layout==='B' ? '&#127968;' : '&#128196;')}
+  const cardHtml = p => `
+    <div class="proj-card" onclick="location.href='editor.html?id=${p.id}'" style="${p.archived?'opacity:.65':''}">
+      <div class="pc-icon" style="${p.archived?'color:var(--txmt)':''}">
+        ${p.archived ? '&#128274;' : (p.layout==='B' ? '&#127968;' : '&#128196;')}
       </div>
       <div style="flex:1;min-width:0">
         <div class="pc-title">${VA.esc(p.addr||'Untitled')}</div>
         <div class="pc-sub">${p.ref?'#'+VA.esc(p.ref)+' &bull; ':''}${VA.esc(p.valuer||'')}${p.occ?' &bull; '+VA.esc(p.occ):''}</div>
       </div>
-      <div class="pc-meta" style="flex-shrink:0">
-        <div class="badge b-nv" style="margin-bottom:4px;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${VA.esc(p.ptype||'—')}</div>
+      <div class="pc-meta">
+        <div class="badge b-nv" style="margin-bottom:4px;font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${VA.esc(p.ptype||'—')}</div>
         <div style="font-size:12px;color:var(--txmt)">${VA.fmtDate(p.date)}</div>
       </div>
-      <div style="flex-shrink:0;position:relative;margin-left:2px" onclick="event.stopPropagation()">
-        <button class="btn bs bxs" style="width:30px;height:30px;padding:0;font-size:16px;line-height:1" onclick="toggleProjMenu('${p.id}',event)">&#8942;</button>
-        <div class="cat-menu" id="${menuId}" style="min-width:160px">
-          ${isArchived
-            ? '<div class="cat-menu-item" onclick="closeProjMenus();unarchiveProject(\''+p.id+'\')">&#128275; Unarchive</div>'
-            : '<div class="cat-menu-item" onclick="closeProjMenus();archiveProject(\''+p.id+'\')">&#128274; Archive</div>'
-          }
-          <div class="cat-menu-item danger" onclick="closeProjMenus();deleteProject('${p.id}')">&#10005; Delete</div>
-        </div>
-      </div>
     </div>`;
-  };
-
-  const sectionHdr = (label, color, extra='') =>
-    `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--txmt);padding:14px 2px 6px;display:flex;align-items:center;gap:6px${extra}"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>${label}</div>`;
 
   let html = upcoming.map(cardHtml).join('');
   if (inspected.length) {
-    html += sectionHdr('Inspected', 'var(--gn)');
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--txmt);padding:14px 2px 6px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gn);display:inline-block"></span>Inspected</div>`;
     html += inspected.map(cardHtml).join('');
   }
   if (archived.length) {

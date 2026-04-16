@@ -20,6 +20,13 @@
   </header>
   <div class="page-content"><div class="pgw" id="ed-body"><p style="padding:20px;text-align:center;color:var(--txmt)">Loading...</p></div></div>
   <div class="sticky-bar">
+    <div style="position:relative">
+      <button class="btn bs bsm" style="padding:6px 10px;font-size:16px" onclick="toggleEditorMenu(event)" id="ed-more-btn">&#8942;</button>
+      <div class="cat-menu" id="ed-more-menu" style="min-width:170px">
+        <div class="cat-menu-item" id="ed-archive-item" onclick="closeEditorMenu();editorArchiveAction()">&#128274; Archive</div>
+        <div class="cat-menu-item danger" onclick="closeEditorMenu();editorDeleteAction()">&#10005; Delete</div>
+      </div>
+    </div>
     <button class="btn bs bsm" onclick="doExportPDF()">&#128196; PDF</button>
     <button class="btn bs bsm" style="font-size:16px;padding:6px 10px" onclick="openCameraTag()" title="Take Photo">&#128247;</button>
     <button class="btn bp" style="flex:1" onclick="saveClose()">Close</button>

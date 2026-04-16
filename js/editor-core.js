@@ -215,6 +215,58 @@ function rebuildFindings(p) {
 
 // Delete moved to index.html card ⋮ menu
 
+// ── Editor ⋮ menu (sticky bar) ────────────────────────────────
+function toggleEditorMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('ed-more-menu');
+  if (!menu) return;
+  const p = gP();
+  const archiveItem = document.getElementById('ed-archive-item');
+  if (archiveItem) archiveItem.textContent = (p && p.archived) ? '\uD83D\uDD13 Unarchive' : '\uD83D\uDD12 Archive';
+  const wasOpen = menu.classList.contains('open');
+  closeEditorMenu();
+  if (!wasOpen) {
+    // Position above the button
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuH = 96; // approximate: 2 items × 48px
+    menu.style.left = Math.max(8, rect.left) + 'px';
+    menu.style.top  = (rect.top - menuH - 4) + 'px';
+    menu.classList.add('open');
+  }
+}
+function closeEditorMenu() {
+  document.getElementById('ed-more-menu')?.classList.remove('open');
+}
+document.addEventListener('click', () => closeEditorMenu());
+
+function editorArchiveAction() {
+  const p = gP(); if (!p) return;
+  if (p.archived) {
+    if (!confirm('Unarchive this project? It will become editable again.')) return;
+    VA.unarchiveProject(p.id);
+    buildEditor(p);
+    toast('Project unarchived');
+  } else {
+    const catCount = (p.cats||[]).reduce((n,c)=>(c.items||[]).length+n, 0);
+    const selCount  = (p.cats||[]).reduce((n,c)=>(c.items||[]).filter(i=>i.sel||(i.notes&&i.notes.trim())).length+n, 0);
+    const trimmed = catCount - selCount;
+    const msg = `Archive "${p.addr||'this project'}"?\n\nThis will:\n• Make it read-only\n• Remove ${trimmed} unselected blank items to save space\n\nYou can unarchive later, but the removed items cannot be recovered.`;
+    if (!confirm(msg)) return;
+    VA.archiveProject(p.id);
+    buildEditor(p);
+    toast('Project archived');
+  }
+}
+
+function editorDeleteAction() {
+  const p = gP(); if (!p) return;
+  if (!confirm(`Delete "${p.addr||'this project'}"? This cannot be undone.`)) return;
+  if (p.caseId) { const c=(VA.db.cases||[]).find(x=>x.id===p.caseId); if(c) delete c.projectId; }
+  VA.db.projects = VA.db.projects.filter(x => x.id !== p.id);
+  VA.save(); toast('Deleted');
+  setTimeout(() => location.href='index.html', 300);
+}
+
 // ── Category ⋮ menu ───────────────────────────────────────────
 let _openCatMenu = null;
 function toggleCatMenu(id, e) {
