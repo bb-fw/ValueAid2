@@ -136,7 +136,7 @@ function exportProjectPDF(p) {
     doc.text('Page '+i+' of '+pages, PW-MR, PH-8, {align:'right'});
   }
 
-  const fn = [(p.ref||'').replace(/[^a-zA-Z0-9]/g,'-').replace(/-+/g,'-'), (p.date||''), 'Inspection-Sheet'].filter(Boolean).join('_');
+  const fn = [(p.ref||'Report'), 'Inspection Sheet'].join('-');
   doc.save(fn+'.pdf');
   toast('PDF exported');
 }

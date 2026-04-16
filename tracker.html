@@ -66,12 +66,12 @@
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
         <span style="font-size:12px;color:var(--txmt);flex-shrink:0">Order by</span>
-        <select id="sort-field" onchange="renderCases()" style="flex:1;font-size:12px;padding:5px 8px">
+        <select id="sort-field" onchange="saveSortPref();renderCases()" style="flex:1;min-width:0;font-size:12px;padding:5px 8px">
           <option value="deadline">Deadline</option>
           <option value="ref">Ref No.</option>
           <option value="progress">Progress Stage</option>
         </select>
-        <select id="sort-dir" onchange="renderCases()" style="font-size:12px;padding:5px 8px">
+        <select id="sort-dir" onchange="saveSortPref();renderCases()" style="flex-shrink:0;width:80px;font-size:12px;padding:5px 8px">
           <option value="asc">↑ Asc</option>
           <option value="desc">↓ Desc</option>
         </select>
@@ -285,7 +285,24 @@ function newCase() {
   location.href = 'case-editor.html?id=' + id;
 }
 
+function saveSortPref() {
+  try {
+    localStorage.setItem('va_sort_field', document.getElementById('sort-field')?.value||'deadline');
+    localStorage.setItem('va_sort_dir',   document.getElementById('sort-dir')?.value||'asc');
+  } catch(e) {}
+}
+function loadSortPref() {
+  try {
+    const f = localStorage.getItem('va_sort_field');
+    const d = localStorage.getItem('va_sort_dir');
+    const sf = document.getElementById('sort-field');
+    const sd = document.getElementById('sort-dir');
+    if (sf && f) sf.value = f;
+    if (sd && d) sd.value = d;
+  } catch(e) {}
+}
 pageInit();
+loadSortPref();
 renderCases();
 </script>
 </body>
