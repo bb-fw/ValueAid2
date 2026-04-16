@@ -20,7 +20,6 @@
   </header>
   <div class="page-content"><div class="pgw" id="ed-body"><p style="padding:20px;text-align:center;color:var(--txmt)">Loading...</p></div></div>
   <div class="sticky-bar">
-    <button class="btn brd bsm" onclick="confirmDelete()">Delete</button>
     <button class="btn bs bsm" onclick="doExportPDF()">&#128196; PDF</button>
     <button class="btn bs bsm" style="font-size:16px;padding:6px 10px" onclick="openCameraTag()" title="Take Photo">&#128247;</button>
     <button class="btn bp" style="flex:1" onclick="saveClose()">Close</button>
@@ -102,16 +101,7 @@
   </div>
 </div>
 
-<!-- CONFIRM DELETE -->
-<div class="overlay center" id="ov-conf">
-  <div class="modal-box">
-    <h3>Delete Project?</h3><p id="conf-msg">This cannot be undone.</p>
-    <div class="modal-footer">
-      <button class="btn bs" onclick="closeOv('ov-conf')">Cancel</button>
-      <button class="btn brd" id="conf-btn">Delete</button>
-    </div>
-  </div>
-</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/db.js"></script>

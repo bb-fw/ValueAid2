@@ -19,6 +19,7 @@ function getStickyForProject() { return camSticky[pid] || {}; }
 function setStickyForProject(s) { camSticky[pid] = s; saveCamSticky(); }
 
 function openCameraTag() {
+  const _p=gP(); if(_p&&_p.archived){toast('Project is archived — cannot add photos');return;}
   const p = gP(); if(!p) return;
   const sticky = getStickyForProject();
   camSel = { level:sticky.level||'', room:sticky.room||'', catId:sticky.catId||'', item:sticky.item||'' };
@@ -196,6 +197,7 @@ function buildFilename(p) {
 }
 
 function camShoot() {
+  const _p=gP(); if(_p&&_p.archived) return;
   const p=gP(); if(!p) return;
   const filename=buildFilename(p);
   setStickyForProject({level:camSel.level,room:camSel.room,catId:camSel.catId,item:camSel.item});

@@ -217,7 +217,7 @@ function normCats(cats) {
 // ── Public API ────────────────────────────────────────────────
 return {
   get db() { return db; },
-  load, save, seed, uid, dc, esc,
+  load, save, seed, uid, dc, esc, archiveProject, unarchiveProject,
   fmtDate, fmtDateLong, fmtDateFile, fmtTime,
   activeCats, catById, roomListById,
   snapshotCats, snapshotRooms, normCats,
@@ -249,6 +249,27 @@ return {
 })();
 
 if ('serviceWorker' in navigator) {
+// ── Archive ───────────────────────────────────────────────────
+function trimCats(cats) {
+  return (cats||[]).map(cat => ({
+    ...cat,
+    items: (cat.items||[]).filter(i => i.sel || (i.notes && i.notes.trim()))
+  }));
+}
+function archiveProject(id) {
+  const p = (db.projects||[]).find(x => x.id === id); if (!p) return;
+  p.archived = true;
+  p.cats = trimCats(p.cats);
+  // Per-unit layout: trim each unit's cats too
+  (p.levels||[]).forEach(lvl => { lvl.cats = trimCats(lvl.cats); });
+  save();
+}
+function unarchiveProject(id) {
+  const p = (db.projects||[]).find(x => x.id === id); if (!p) return;
+  p.archived = false;
+  save();
+}
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });

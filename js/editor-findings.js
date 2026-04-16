@@ -54,6 +54,7 @@ function refreshCatPrev(p, ci) {
 
 function openCatPicker(ci) {
   const p=gP(); if(!p) return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const cat = p.cats[ci];
   const allItems = (cat.items||[]).map(i=>i.name);
   const selSet = new Set((cat.items||[]).filter(i=>i.sel).map(i=>i.name));
@@ -66,13 +67,15 @@ function openCatPicker(ci) {
 
 function moveProjCat(ci, dir) {
   const p=gP(); if(!p) return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const cats=p.cats; if(ci+dir<0||ci+dir>=cats.length) return;
   [cats[ci],cats[ci+dir]]=[cats[ci+dir],cats[ci]];
   VA.save(); rebuildFindings(p);
 }
 
 function removeProjCat(ci) {
-  const p=gP(); if(!p) return;
+  const p=gP();
+  if(gP()&&gP().archived){toast('Project is archived');return;} if(!p) return;
   const cat=p.cats[ci];
   const hasSelected=(cat.items||[]).some(i=>i.sel);
   if(hasSelected && !confirm(`Remove "${cat.name}" from this project? It has selected items that will be lost.`)) return;
@@ -81,6 +84,7 @@ function removeProjCat(ci) {
 }
 
 function openAddCatToProject() {
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p) return;
   const existingIds=new Set((p.cats||[]).map(c=>c.id).filter(Boolean));
   const existingNames=new Set((p.cats||[]).map(c=>c.name.toLowerCase()));
@@ -162,6 +166,7 @@ function renderLevels(p) {
 
 function moveLv(li, dir) {
   const p=gP(); if(!p) return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const lvs=p.levels; if(li+dir<0||li+dir>=lvs.length) return;
   [lvs[li],lvs[li+dir]]=[lvs[li+dir],lvs[li]];
   VA.save(); renderLevels(p);
@@ -185,6 +190,7 @@ function addLevelNamed(name) {
 
 function openRoomPicker(li) {
   const p=gP(); if(!p||!p.levels[li]) return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const rooms = p.roomSnapshot && p.roomSnapshot.length ? p.roomSnapshot : VA.getActiveRooms();
   const extra = (p.levels[li].rooms||[]).filter(r=>!rooms.includes(r));
   const allItems = [...rooms,...extra];
@@ -208,7 +214,8 @@ function openRoomPicker(li) {
   );
 }
 
-function removeLevel(li){const p=gP();if(!p)return;if(!confirm('Remove this level?'))return;p.levels.splice(li,1);VA.save();renderLevels(p);}
+function removeLevel(li){const p=gP();if(!p)return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}if(!confirm('Remove this level?'))return;p.levels.splice(li,1);VA.save();renderLevels(p);}
 
 // ══════════════════════════════════════════════════════════════
 //  LAYOUT B — Per-unit
@@ -316,6 +323,7 @@ function toggleUnit(hdr){
 
 function moveUnit(ui, dir) {
   const p=gP(); if(!p) return;
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const lvs=p.levels; if(ui+dir<0||ui+dir>=lvs.length) return;
   const open=getOpenUnits();
   const newOpen=new Set();
@@ -325,6 +333,7 @@ function moveUnit(ui, dir) {
 }
 
 function removeUnit(ui) {
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p) return;
   const u=p.levels[ui];
   const hasData=cntUnitOwn(u)>0;
@@ -337,6 +346,7 @@ function removeUnit(ui) {
 }
 
 function openAddUnitPicker() {
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p) return;
   const rooms = (p.roomSnapshot&&p.roomSnapshot.length) ? p.roomSnapshot : VA.getActiveRooms();
   VA_PICKER.openSingle(
@@ -360,6 +370,7 @@ function addUnit(name){
 
 function moveUnitCat(ui, uci, dir) {
   const p=gP(); if(!p||!p.levels[ui]) return;
+  if(p.archived){toast('Project is archived');return;}
   const u=p.levels[ui];
   if(!u.cats) u.cats=[...p.cats];
   const cats=u.cats;
@@ -371,6 +382,7 @@ function moveUnitCat(ui, uci, dir) {
 
 function removeUnitCat(ui, uci) {
   const p=gP(); if(!p||!p.levels[ui]) return;
+  if(p.archived){toast('Project is archived');return;}
   const u=p.levels[ui];
   if(!u.cats) u.cats=[...p.cats];
   const cat=u.cats[uci];
@@ -383,6 +395,7 @@ function removeUnitCat(ui, uci) {
 }
 
 function openAddCatToUnit(ui) {
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p||!p.levels[ui]) return;
   const u=p.levels[ui];
   if(!u.cats) u.cats=[...p.cats];
@@ -418,6 +431,7 @@ function addCatToUnit(ui, catDef) {
 }
 
 function openUnitCatPicker(ui, uci) {
+  if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p||!p.levels[ui]) return;
   const u=p.levels[ui];
   const unitCats=u.cats||p.cats;

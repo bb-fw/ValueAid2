@@ -343,27 +343,7 @@ function ceSave() {
 function caseClose() { ceSave(); location.href='tracker.html'; }
 
 // ── Conflict-aware linking ────────────────────────────────────
-function openLinkPicker() {
-  const c = gC(); if (!c) return;
-  const projects = VA.db.projects.filter(p => !p.caseId || p.caseId===c.id);
-  if (!projects.length) { toast('No unlinked inspection projects found'); return; }
-  VA_PICKER.openSingle(
-    'Link to Inspection Project',
-    projects.map(p => (p.ref?'#'+p.ref+' — ':'') + (p.addr||'No address')),
-    (label) => {
-      const p = projects.find(p => ((p.ref?'#'+p.ref+' — ':'')+(p.addr||'No address'))===label);
-      if (!p) return;
-      const conflicts = getLinkConflicts(c, p);
-      if (conflicts.length && !confirm('Linking will overwrite: ' + conflicts.join(', ') + '.\n\nCase values will be used. Continue?')) return;
-      c.projectId=p.id; p.caseId=c.id;
-      if (c.ref) p.ref=c.ref;
-      if (c.addr) p.addr=c.addr;
-      if (c.inspDate) p.date=c.inspDate;
-      if (c.inspTime) p.time=c.inspTime;
-      VA.save(); buildCase(c); toast('Linked to project');
-    }, null
-  );
-}
+
 
 function unlinkProject() {
   const c=gC(); if(!c||!c.projectId) return;

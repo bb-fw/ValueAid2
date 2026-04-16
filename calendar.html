@@ -64,7 +64,7 @@ function buildEventMap() {
   const ensure = iso => { if(!ev[iso]) ev[iso]={inspections:[],deadlines:[],caseInspections:[]}; };
   // Linked inspection projects (only those NOT linked to a case, to avoid duplication)
   VA.db.projects.forEach(p => {
-    if (p.date && !p.caseId) { ensure(p.date); ev[p.date].inspections.push(p); }
+    if (p.date && !p.caseId && !p.archived) { ensure(p.date); ev[p.date].inspections.push(p); }
   });
   // Cases: inspection date + deadline
   (VA.db.cases||[]).forEach(c => {

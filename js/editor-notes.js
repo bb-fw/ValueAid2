@@ -12,6 +12,7 @@ function refreshNoteTag(elId, note, onClickStr) {
 let _noteType=null, _noteCi=-1, _noteLi=-1;
 
 function openNoteEditor(type, ci, li) {
+  const _p=gP(); if(_p&&_p.archived){toast('Project is archived');return;}
   _noteType=type; _noteCi=ci; _noteLi=li;
   const p=gP(); if(!p) return;
   let cur='';
@@ -29,6 +30,7 @@ function openNoteEditor(type, ci, li) {
 }
 
 function saveNote() {
+  const _p=gP(); if(_p&&_p.archived) return;
   const p=gP(); if(!p) return;
   const v=(document.getElementById('note-ta')?.value||'').trim();
   if(_noteType==='cat'){

@@ -12,6 +12,7 @@ const catKey = (cat) => cat.id || cat.name;
 function buildEditor(p) {
   const isB = p.layout === 'B';
   document.getElementById('ed-body').innerHTML = `
+    ${p.archived ? '<div class="info-box" style="background:var(--ambg);color:var(--am);border-color:var(--am);display:flex;align-items:center;gap:8px"><span>&#128274;</span><span style="flex:1"><b>Archived</b> — this project is read-only</span></div>' : ''}
     <div class="info-box">${isB?'&#127968; Per-Unit':'&#128196; Standard'} layout &bull; ${VA.esc(p.addr||'')}</div>
     <div class="sectlbl">1. Project Information</div>
     <div class="fg">
@@ -94,6 +95,14 @@ function buildEditor(p) {
   ps.innerHTML = '<option value="">— Select —</option>' + VA.db.propertyTypes.map(t=>`<option${p.ptype===t?' selected':''}>${VA.esc(t)}</option>`).join('');
   if (!isB) { (p.cats||[]).forEach((_,ci) => refreshCatPrev(p,ci)); renderLevels(p); }
   else renderUnits(p);
+  // Disable all editing controls when archived
+  if (p.archived) {
+    const body = document.getElementById('ed-body');
+    if (body) {
+      body.querySelectorAll('input,select,textarea').forEach(el => { el.disabled = true; });
+      body.querySelectorAll('button').forEach(el => { el.disabled = true; el.style.opacity = '0.4'; el.style.pointerEvents = 'none'; });
+    }
+  }
 }
 
 // ── Valuer / property type inline managers ────────────────────
@@ -105,6 +114,7 @@ function openPtypeMgr(){openInlineMgr('Property Types',()=>VA.db.propertyTypes,v
 // ── HDB toggle ────────────────────────────────────────────────
 function toggleHDB() {
   const p=gP(); if(!p) return;
+  if(p.archived) return;
   p.isHDB = !p.isHDB;
   document.getElementById('hdb-tog')?.classList.toggle('on', p.isHDB);
   document.getElementById('hdb-fields').style.display = p.isHDB ? 'block' : 'none';
@@ -180,6 +190,7 @@ function viewLinkedCase() {
 
 function autoSave() {
   const p = readEd(); if (!p) return;
+  if (p.archived) return; // read-only — no writes
   // Sync shared fields to linked case
   if (p.caseId) {
     const c = (VA.db.cases||[]).find(x => x.id === p.caseId);
@@ -194,7 +205,7 @@ function autoSave() {
   VA.save();
 }
 function saveClose(){ autoSave(); location.href='index.html'; }
-function doExportPDF(){ const p=readEd(); if(p){ VA.save(); exportProjectPDF(p); } }
+function doExportPDF(){ const p=gP(); if(!p) return; if(!p.archived){ const r=readEd(); if(!r) return; VA.save(); } exportProjectPDF(p); }
 
 function rebuildFindings(p) {
   const scrollY = window.scrollY;
@@ -202,16 +213,7 @@ function rebuildFindings(p) {
   requestAnimationFrame(() => window.scrollTo(0, scrollY));
 }
 
-function confirmDelete() {
-  const p=gP();
-  document.getElementById('conf-msg').textContent=`Delete "${p?.addr||'this project'}"? Cannot be undone.`;
-  document.getElementById('conf-btn').onclick=()=>{
-    VA.db.projects=VA.db.projects.filter(x=>x.id!==pid);
-    VA.save(); closeOv('ov-conf'); toast('Deleted');
-    setTimeout(()=>location.href='index.html',400);
-  };
-  openOv('ov-conf');
-}
+// Delete moved to index.html card ⋮ menu
 
 // ── Category ⋮ menu ───────────────────────────────────────────
 let _openCatMenu = null;
