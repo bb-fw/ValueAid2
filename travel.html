@@ -23,7 +23,10 @@
   </div>
   <div class="page-content">
     <div class="pgw">
-      <div class="sh mt12"><h2>Travel Log</h2></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px">
+        <h2>Travel Log</h2>
+        <button class="btn bs bsm" onclick="exportTravelXLSX()">&#8659; Export Excel</button>
+      </div>
       <div id="travel-list"></div>
     </div>
   </div>
@@ -161,8 +164,42 @@
 <script src="js/db.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/picker.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 let editingTripId = null;
+
+// ─── EXCEL EXPORT ──────────────────────────────────────────────
+function exportTravelXLSX() {
+  const trips = VA.db.travels.filter(t => t.endTime)
+    .sort((a,b) => new Date(a.startTime||0) - new Date(b.startTime||0));
+  if (!trips.length) { toast('No completed trips to export'); return; }
+  const rows = [['Date','From','To','Start','End','Duration','Methods','Parking','ERP','Taxi (S$)','Distance (km)','Notes']];
+  trips.forEach(t => {
+    const start = t.startTime ? VA.fmtTime(new Date(t.startTime)) : '';
+    const end   = t.endTime   ? VA.fmtTime(new Date(t.endTime))   : '';
+    const dur   = (t.startTime && t.endTime) ? getDur(t.startTime, t.endTime) : '';
+    rows.push([
+      t.date || '',
+      t.from || '',
+      t.to   || '',
+      start, end, dur,
+      (t.methods||[]).join(', '),
+      t.hasParking ? 'Yes' : '',
+      t.hasERP     ? 'Yes' : '',
+      t.taxiFare   || '',
+      t.distKm     || '',
+      t.notes      || ''
+    ]);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // Column widths
+  ws['!cols'] = [10,24,24,8,8,8,20,8,6,10,12,24].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Travel Log');
+  const date = (()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  XLSX.writeFile(wb, 'travel-log-'+date+'.xlsx');
+  toast('Exported');
+}
 
 // ─── RENDER ────────────────────────────────────────────────────
 function renderTravels() {

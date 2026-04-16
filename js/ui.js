@@ -67,7 +67,10 @@ function buildLocOpts(inputId, listId) {
   const list = document.getElementById(listId);
   if (!list) return;
   const saved = VA.db.savedLocations;
-  const proj = [...new Set(VA.db.projects.map(p => p.addr).filter(a => a && !saved.includes(a)))];
+  const todayStr = (()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  const proj = [...new Set(VA.db.projects
+    .filter(p => !p.date || p.date >= todayStr)
+    .map(p => p.addr).filter(a => a && !saved.includes(a)))];
   let h = '';
   if (saved.length) h += '<div class="lo lo-group">Saved</div>' + saved.map(l => `<div class="lo" data-val="${VA.esc(l)}">${VA.esc(l)}</div>`).join('');
   if (proj.length) h += '<div class="lo lo-group">From Projects</div>' + proj.map(l => `<div class="lo" data-val="${VA.esc(l)}">${VA.esc(l)}</div>`).join('');

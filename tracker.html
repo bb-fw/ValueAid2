@@ -59,10 +59,22 @@
   <div class="page-content">
     <div class="pgw">
       <div class="stats-bar" id="stats-bar"></div>
-      <div style="position:relative;margin-bottom:10px">
+      <div style="position:relative;margin-bottom:8px">
         <input type="text" id="search-inp" placeholder="Search ref, address, client..."
                style="padding-left:32px" oninput="searchQuery=this.value;renderCases()">
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <span style="font-size:12px;color:var(--txmt);flex-shrink:0">Order by</span>
+        <select id="sort-field" onchange="renderCases()" style="flex:1;font-size:12px;padding:5px 8px">
+          <option value="deadline">Deadline</option>
+          <option value="ref">Ref No.</option>
+          <option value="progress">Progress Stage</option>
+        </select>
+        <select id="sort-dir" onchange="renderCases()" style="font-size:12px;padding:5px 8px">
+          <option value="asc">↑ Asc</option>
+          <option value="desc">↓ Desc</option>
+        </select>
       </div>
       <div id="case-list"></div>
     </div>
@@ -151,7 +163,7 @@ function renderStats() {
   const completed = all.filter(isComplete).length;
   const ongoing = all.length - completed;
   // Upcoming inspections = cases with inspDate >= today and not complete
-  const upcoming = all.filter(c => c.inspDate && c.inspDate >= today && !isComplete(c)).length;
+  const upcoming = all.filter(c => c.inspDate && c.inspDate > today && !isComplete(c)).length;
   el.innerHTML =
     `<div class="stat-cell"><div class="stat-num" style="color:var(--bl)">${ongoing}</div><div class="stat-lbl">Ongoing</div></div>` +
     `<div class="stat-cell"><div class="stat-num" style="color:var(--am)">${upcoming}</div><div class="stat-lbl">Upcoming<br>Inspections</div></div>` +
@@ -174,13 +186,35 @@ function renderCases() {
     );
   }
 
-  cases.sort((a,b) => {
-    // Completed cases always last
+  // ── Sort ──────────────────────────────────────────────────────
+  const sortField = document.getElementById('sort-field')?.value || 'deadline';
+  const sortDir   = document.getElementById('sort-dir')?.value   || 'asc';
+  const dirMul    = sortDir === 'asc' ? 1 : -1;
+
+  // Progress stage: # of stages completed = index of current stage in snapshot
+  const stageProgress = c => {
+    const stg = getStages(c);
+    const idx = stg.indexOf(c.stage||'');
+    return idx < 0 ? 0 : idx;
+  };
+
+  cases.sort((a, b) => {
+    // Completed always last regardless of sort direction
     const ac = isCaseComplete(a) ? 1 : 0, bc = isCaseComplete(b) ? 1 : 0;
     if (ac !== bc) return ac - bc;
-    const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
-    if (da !== db2) return da < db2 ? -1 : 1;
-    return (b.createdAt||'') < (a.createdAt||'') ? -1 : 1;
+
+    let cmp = 0;
+    if (sortField === 'ref') {
+      const ra = (a.ref||'').padStart(10,'0'), rb = (b.ref||'').padStart(10,'0');
+      cmp = ra < rb ? -1 : ra > rb ? 1 : 0;
+    } else if (sortField === 'progress') {
+      cmp = stageProgress(a) - stageProgress(b);
+    } else {
+      // deadline (default)
+      const da = a.deadline||'9999-99-99', db2 = b.deadline||'9999-99-99';
+      cmp = da < db2 ? -1 : da > db2 ? 1 : 0;
+    }
+    return cmp * dirMul;
   });
 
   if (!cases.length) {

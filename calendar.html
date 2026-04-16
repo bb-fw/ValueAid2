@@ -69,7 +69,9 @@ function buildEventMap() {
   // Cases: inspection date + deadline
   (VA.db.cases||[]).forEach(c => {
     if (c.inspDate) { ensure(c.inspDate); ev[c.inspDate].caseInspections.push(c); }
-    if (c.deadline) { ensure(c.deadline); ev[c.deadline].deadlines.push(c); }
+    const cStages=(c.checklistSnapshot&&c.checklistSnapshot.length)?c.checklistSnapshot:((VA.db.checklists||[]).find(x=>x.id===c.checklistId)||{stages:['Case Complete']}).stages;
+    const cDone=c.stage&&c.stage===cStages[cStages.length-1];
+    if(c.deadline&&!cDone){ensure(c.deadline);ev[c.deadline].deadlines.push(c);}
   });
   return ev;
 }

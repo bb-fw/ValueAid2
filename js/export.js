@@ -29,10 +29,10 @@ function exportProjectPDF(p) {
     ['Date of Inspection', (p.date ? VA.fmtDate(p.date) : '—') + (p.time ? '  at  '+p.time : '')],
     ['Valuer-in-Charge', p.valuer || '—'],
     ['Property Type', p.ptype || '—'],
-    ['No. of Storeys', p.storeys || '—'],
     ['Occupancy', p.occ || '—'],
     ['Condition', p.cond || '—'],
     ...(p.isHDB ? [
+      ['No. of Storeys', p.storeys || '—'],
       ['Recess Area (m²)', p.recess || '—'],
       ['Orientation', p.orientation || '—'],
       ['MUP', p.mup || '—'],
