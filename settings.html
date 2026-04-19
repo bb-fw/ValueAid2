@@ -33,7 +33,22 @@
   <div class="page-content">
     <div class="pgw mt12">
 
-      <!-- STORAGE WARNING -->
+      <!-- STORAGE INDICATOR -->
+      <div class="card mb12" id="storage-card">
+        <div style="padding:12px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:600">Storage Usage</span>
+            <span id="storage-pct" style="font-size:12px;font-weight:700;color:var(--txmt)">—</span>
+          </div>
+          <div style="background:var(--sf2);border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px">
+            <div id="storage-bar" style="height:100%;border-radius:4px;background:var(--gn);width:0%;transition:width .4s"></div>
+          </div>
+          <div id="storage-detail" style="font-size:11px;color:var(--txmt);line-height:1.6"></div>
+          <p style="font-size:11px;color:var(--txmt);margin-top:6px;line-height:1.5">&#9888;&#65039; Clearing browser data will <b>permanently delete everything.</b> Export regularly.</p>
+        </div>
+      </div>
+
+      <!-- STORAGE WARNING (one-time dismissible) -->
       <div id="storage-notice" style="display:none;background:var(--ambg);border:1px solid var(--am);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <span style="font-size:18px;flex-shrink:0">&#9888;&#65039;</span>
@@ -758,6 +773,42 @@ function importAllData(inp){
   r.readAsText(f); inp.value='';
 }
 
+function renderStorageIndicator() {
+  try {
+    const raw = localStorage.getItem('valueaid_v5') || '';
+    const used = new Blob([raw]).size;
+    const cap = 5 * 1024 * 1024; // 5MB conservative estimate
+    const pct = Math.min(100, Math.round(used / cap * 100));
+    const usedKB = (used / 1024).toFixed(1);
+    const capMB = (cap / 1024 / 1024).toFixed(0);
+
+    // Colour thresholds
+    const colour = pct >= 80 ? 'var(--rd)' : pct >= 60 ? 'var(--am)' : 'var(--gn)';
+
+    const bar = document.getElementById('storage-bar');
+    const pctEl = document.getElementById('storage-pct');
+    const detail = document.getElementById('storage-detail');
+    if (!bar || !pctEl || !detail) return;
+
+    bar.style.width = pct + '%';
+    bar.style.background = colour;
+    pctEl.style.color = colour;
+    pctEl.textContent = pct + '%';
+
+    // Break down by record type
+    const db = VA.db;
+    const projCount = (db.projects||[]).length;
+    const caseCount = (db.cases||[]).length;
+    const archivedCount = (db.projects||[]).filter(p=>p.archived).length;
+    detail.innerHTML =
+      `${usedKB} KB used of ~${capMB} MB &nbsp;·&nbsp; ` +
+      `${projCount} project${projCount===1?'':'s'} (${archivedCount} archived) &nbsp;·&nbsp; ` +
+      `${caseCount} case${caseCount===1?'':'s'}` +
+      (pct >= 80 ? `<br><span style="color:var(--rd);font-weight:600">&#9888; Storage is almost full — archive completed projects or export and clear old data.</span>` : '') +
+      (pct >= 60 && pct < 80 ? `<br><span style="color:var(--am)">Consider archiving completed projects to free space.</span>` : '');
+  } catch(e) {}
+}
+
 function dismissNotice(){document.getElementById('storage-notice').style.display='none';try{localStorage.setItem('va_notice_dismissed','1');}catch(e){}}
 
 pageInit();
@@ -767,6 +818,7 @@ renderRLList();
 populateTplSelect();
 loadTplEditor();
 renderCLList();
+renderStorageIndicator();
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
 
 // ═══════════════════════════════════════════════════════════════

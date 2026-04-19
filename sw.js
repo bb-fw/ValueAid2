@@ -2,13 +2,13 @@
 // The cache name change triggers automatic old-cache deletion
 // and forces fresh files to be fetched from the server.
 // localStorage (app data) is never touched by this process.
-const CACHE = 'valueaid-v1.3.0';
+const CACHE = 'valueaid-v1.3.1';
 
 const ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
   './calendar.html', './settings.html',
   './css/styles.css', './js/db.js', './js/ui.js', './js/picker.js', './js/editor-core.js', './js/editor-findings.js', './js/editor-notes.js', './js/editor-camera.js', './css/editor.css',
-  './js/export.js', './manifest.json',
+  './js/export.js', './js/jspdf.umd.min.js', './js/xlsx.full.min.js', './manifest.json',
   './icons/icon-192.png', './icons/icon-512.png'
 ];
 

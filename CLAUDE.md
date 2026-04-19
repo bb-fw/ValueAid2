@@ -6,7 +6,7 @@ A Progressive Web App (PWA) for property valuers in Singapore. It manages inspec
 ## Deployment
 - **Repo:** https://github.com/bb-fw/ValueAid
 - **Live:** https://value-aid2.vercel.app
-- **Current version:** v1.3.0 (sw.js cache key `valueaid-v1.3.0`)
+- **Current version:** v1.3.1 (sw.js cache key `valueaid-v1.3.1`)
 - Versioning: `v1.x.y` — minor version for new features, patch for fixes. Bump sw.js cache key on every release.
 
 ---
@@ -159,7 +159,7 @@ function localISO(d){
 
 6. **Source field** — appears in case editor and new project sheet only. Not in the inspection project editor (removed). Not synced between linked case and project. Not in PDF export.
 
-7. **Travel XLSX export** loads SheetJS from CDN (`cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js`) — not cached by sw.js, requires network.
+7. **jsPDF and SheetJS are self-hosted** in `js/jspdf.umd.min.js` and `js/xlsx.full.min.js` and listed in sw.js ASSETS — both work fully offline.
 
 8. **Calendar uses `buildEventMap()`** — called once in `renderCal()` and passed to `renderEvs()`. Do not call it again inside `renderEvs`. Archived projects are excluded. Completed case deadlines are excluded.
 
@@ -184,3 +184,4 @@ function localISO(d){
 | v1.2.8 | Full audit — no bugs found |
 | v1.2.9 | Fix: archive functions were outside IIFE in db.js, making VA.archiveProject undefined |
 | v1.3.0 | Dead picker removed, tracker shows phone+inspected stat, new project sheet simplified, Create Case from Project |
+| v1.3.1 | jsPDF and SheetJS self-hosted (offline fix), storage indicator in Settings |
