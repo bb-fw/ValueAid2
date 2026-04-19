@@ -140,7 +140,7 @@ function buildCase(c) {
     '<input type="text" id="ce-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123" value="' + VA.esc(c.ref||'') + '" oninput="ceRefInput(this.value)">' +
     '<div class="ref-warn" id="ref-warn">&#9888; Ref no. should be exactly 6 digits</div></div>' +
 
-    '<div class="fg"><label class="fl">Address</label>' +
+    '<div class="fg"><label class="fl" style="display:flex;align-items:center;justify-content:space-between">Address<button type="button" onclick="if(document.getElementById(\'ce-addr\').value)openInMaps(document.getElementById(\'ce-addr\').value)" class="btn bs bxs" style="font-size:11px;padding:2px 7px">&#128205; Maps</button></label>' +
     '<input type="text" id="ce-addr" placeholder="Property address" value="' + VA.esc(c.addr||'') + '" oninput="ceSave()"></div>' +
 
     '<div class="fg"><label class="fl">Client / Contact</label>' +

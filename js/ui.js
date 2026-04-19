@@ -1,6 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
 //  ValueAid — Shared UI utilities
 // ═══════════════════════════════════════════════════════════════
+function openInMaps(addr) {
+  if (!addr) return;
+  const q = encodeURIComponent(addr);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  window.open(isIOS ? 'https://maps.apple.com/?q=' + q : 'geo:0,0?q=' + q);
+}
+
 
 let _toastTimer;
 function toast(msg) {

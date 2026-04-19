@@ -123,23 +123,38 @@ function renderEvs(date, ev){
   if(allInsp){
     html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
     html+=e.inspections.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
-      <div class="ev-time">${VA.esc(p.time||'Time not set')} &bull; ${VA.esc(p.ptype||'Property')}</div>
-      <div class="ev-title">${VA.esc(p.addr||'Untitled')}</div>
-      <div class="ev-sub">${p.valuer?'Valuer: '+VA.esc(p.valuer):''}${p.cond?' &bull; '+VA.esc(p.cond):''}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
+        <div style="flex:1;min-width:0">
+          <div class="ev-time">${VA.esc(p.time||'Time not set')} &bull; ${VA.esc(p.ptype||'Property')}</div>
+          <div class="ev-title">${VA.esc(p.addr||'Untitled')}</div>
+          <div class="ev-sub">${p.valuer?'Valuer: '+VA.esc(p.valuer):''}${p.cond?' &bull; '+VA.esc(p.cond):''}</div>
+        </div>
+        ${p.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(p.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
+      </div>
     </div>`).join('');
     html+=e.caseInspections.map(c=>`<div class="ev-item" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
-      <div class="ev-time">${VA.esc(c.inspTime||'Time not set')}${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
-      <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
-      <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${c.delayed?' &bull; <span style="color:var(--am)">Delayed</span>':''}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
+        <div style="flex:1;min-width:0">
+          <div class="ev-time">${VA.esc(c.inspTime||'Time not set')}${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
+          <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
+          <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${c.delayed?' &bull; <span style="color:var(--am)">Delayed</span>':''}</div>
+        </div>
+        ${c.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(c.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
+      </div>
     </div>`).join('');
   }
   // Deadlines
   if(e.deadlines.length){
     html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--rd);display:inline-block"></span>Case Deadlines — ${VA.fmtDateLong(date)}</h2></div>`;
     html+=e.deadlines.map(c=>`<div class="ev-item" style="border-left:3px solid var(--rd)" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
-      <div class="ev-time" style="color:var(--rd)">&#9888; Deadline${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
-      <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
-      <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${' &bull; Stage: '+VA.esc(c.stage||'—')}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
+        <div style="flex:1;min-width:0">
+          <div class="ev-time" style="color:var(--rd)">&#9888; Deadline${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
+          <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
+          <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${' &bull; Stage: '+VA.esc(c.stage||'—')}</div>
+        </div>
+        ${c.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(c.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
+      </div>
     </div>`).join('');
   }
   el.innerHTML=html;
