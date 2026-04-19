@@ -74,10 +74,7 @@
       </div>
       <div class="divider"></div>
       <div class="fg"><label class="fl">Reference No.</label><input type="text" id="np-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123"></div>
-      <div class="r2">
-        <div class="fg"><label class="fl">Date of Inspection</label><input type="date" id="np-date"></div>
-        <div class="fg"><label class="fl">Time</label><input type="time" id="np-time"></div>
-      </div>
+
       <div class="fg">
         <label class="fl">Valuer-in-Charge</label>
         <div style="display:flex;gap:6px">
@@ -92,27 +89,17 @@
           <button class="btn bs bsm" onclick="openPtypeMgr()">Edit</button>
         </div>
       </div>
-      <div class="r2">
-        <div class="fg"><label class="fl">No. of Storeys</label><input type="number" id="np-storeys" min="1" max="99" placeholder="1"></div>
-        <div class="fg"><label class="fl">Occupancy</label>
-          <select id="np-occ">
-            <option value="">— Select —</option>
-            <option>Owner-Occupied</option><option>Tenanted</option><option>Vacant</option>
-            <option>Partially Owner-Occupied &amp; Tenanted</option>
-            <option>Partially Owner-Occupied &amp; Vacant</option>
-            <option>Partially Tenanted &amp; Vacant</option><option>N.A.</option>
-          </select>
-        </div>
-      </div>
-      <div class="fg"><label class="fl">Property Address</label><input type="text" id="np-addr" placeholder="Full address"></div>
-      <div class="fg"><label class="fl">Condition</label>
-        <select id="np-cond">
+      <div class="fg"><label class="fl">Occupancy</label>
+        <select id="np-occ">
           <option value="">— Select —</option>
-          <option>New</option><option>Very Good</option><option>Good</option>
-          <option>Above Average</option><option>Average</option><option>Below Average</option>
-          <option>Fair</option><option>Poor</option><option>Under Construction</option>
+          <option>Owner-Occupied</option><option>Tenanted</option><option>Vacant</option>
+          <option>Partially Owner-Occupied &amp; Tenanted</option>
+          <option>Partially Owner-Occupied &amp; Vacant</option>
+          <option>Partially Tenanted &amp; Vacant</option><option>N.A.</option>
         </select>
       </div>
+      <div class="fg"><label class="fl">Property Address</label><input type="text" id="np-addr" placeholder="Full address"></div>
+
       <div class="fg"><label class="fl">Template</label>
         <select id="np-tpl"><option value="">— Default —</option></select>
       </div>
@@ -286,12 +273,8 @@ function pickLayout(l) {
 function openNewProject() {
   newLayout = 'A'; pickLayout('A');
   const now = new Date();
-  const _y=now.getFullYear(),_m=String(now.getMonth()+1).padStart(2,'0'),_d=String(now.getDate()).padStart(2,'0');
-  document.getElementById('np-date').value = _y+'-'+_m+'-'+_d;
-  document.getElementById('np-time').value = now.toTimeString().slice(0,5);
-  ['np-ref','np-addr','np-storeys'].forEach(id => document.getElementById(id).value = '');
+  ['np-ref','np-addr'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('np-occ').value = '';
-  document.getElementById('np-cond').value = '';
   refreshValuerDrop(); refreshPtypeDrop();
   // Template dropdown
   VA.seed();
@@ -314,13 +297,10 @@ function createProject() {
   const p = {
     id: VA.uid(), layout: newLayout,
     ref: document.getElementById('np-ref').value.trim(),
-    date: document.getElementById('np-date').value,
-    time: document.getElementById('np-time').value,
     valuer: document.getElementById('np-valuer').value,
     ptype: document.getElementById('np-ptype').value,
-    storeys: document.getElementById('np-storeys').value,
     occ: document.getElementById('np-occ').value,
-    addr, cond: document.getElementById('np-cond').value,
+    addr,
     remarks: '',
     cats: tpl ? VA.snapshotCats(tpl) : VA.activeCats().map(c=>({id:c.id,name:c.name,items:c.items.map(it=>({name:it,sel:false})),notes:''})),
     roomSnapshot: tpl ? VA.snapshotRooms(tpl) : VA.getActiveRooms(),
@@ -346,9 +326,7 @@ function openNewProjectFromCase(c) {
   const set = (id,val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
   set('np-ref', c.ref);
   set('np-addr', c.addr);
-  set('np-date', c.inspDate);
-  set('np-time', c.inspTime);
-  // Property type: match by text since options are now populated
+  // Property type
   if (c.ptype) {
     const sel = document.getElementById('np-ptype');
     if (sel) [...sel.options].forEach(o => { if(o.text===c.ptype||o.value===c.ptype) sel.value=o.value; });

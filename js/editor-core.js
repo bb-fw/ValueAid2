@@ -20,7 +20,7 @@ function buildEditor(p) {
         <span>Reference No.</span>
         ${p.caseId
           ? '<span style="font-size:11px;color:var(--gn);font-weight:600;cursor:pointer" onclick="viewLinkedCase()">&#128279; Linked to Case</span>'
-          : '<button class="btn bs" style="font-size:11px;padding:2px 8px" onclick="openLinkFromCase()">&#128279; Link from Tracker</button>'
+          : '<button class="btn bs" style="font-size:11px;padding:2px 8px" onclick="createCaseFromProject()">&#128203; Create Case</button>'
         }
       </label>
       <input type="text" id="ed-ref" inputmode="numeric" maxlength="6" placeholder="e.g. 240123"
@@ -151,36 +151,29 @@ function edRefInput(val) {
   autoSave();
 }
 
-function _getLinkConflictsFromProject(p, c) {
-  const ow = [];
-  if (p.ref && c.ref && p.ref !== c.ref) ow.push('Ref (' + p.ref + ' → ' + c.ref + ')');
-  if (p.addr && c.addr && p.addr !== c.addr) ow.push('Address');
-  if (p.date && c.inspDate && p.date !== c.inspDate) ow.push('Insp. Date');
-  if (p.time && c.inspTime && p.time !== c.inspTime) ow.push('Insp. Time');
-  return ow;
-}
-
-function openLinkFromCase() {
+function createCaseFromProject() {
   const p = gP(); if (!p) return;
-  const cases = (VA.db.cases||[]).filter(c => !c.projectId || c.projectId === p.id);
-  if (!cases.length) { toast('No unlinked cases found'); return; }
-  VA_PICKER.openSingle(
-    'Link from Case Tracker',
-    cases.map(c => (c.ref ? '#'+c.ref+' — ' : '') + (c.addr||'No address')),
-    (label) => {
-      const c = cases.find(c => ((c.ref ? '#'+c.ref+' — ' : '')+(c.addr||'No address')) === label);
-      if (!c) return;
-      const conflicts = _getLinkConflictsFromProject(p, c);
-      if (conflicts.length && !confirm('Linking will overwrite: ' + conflicts.join(', ') + '.\n\nCase values will be used. Continue?')) return;
-      p.caseId = c.id; c.projectId = p.id;
-      if (c.ref) p.ref = c.ref;
-      if (c.addr) p.addr = c.addr;
-      if (c.inspDate) p.date = c.inspDate;
-      if (c.inspTime) p.time = c.inspTime;
-      VA.save(); buildEditor(p);
-      toast('Linked to case #'+(c.ref||c.id));
-    }, null
-  );
+  autoSave(); // flush current editor state first
+  const defaultCl = (VA.db.checklists||[])[0];
+  const _d = new Date(); const _iso = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+  const newCase = {
+    id: VA.uid(),
+    ref: p.ref||'', addr: p.addr||'', client:'', phone:'',
+    ptype: p.ptype||'', source: p.source||'',
+    inspDate: p.date||'', inspTime: p.time||'',
+    createdAt: _iso, deadline:'',
+    stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
+    delayed: false, notes:'',
+    checklistId: defaultCl ? defaultCl.id : '',
+    checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],
+    projectId: p.id
+  };
+  p.caseId = newCase.id;
+  if (!VA.db.cases) VA.db.cases = [];
+  VA.db.cases.push(newCase);
+  VA.save();
+  buildEditor(p);
+  toast('Case created — tap to open');
 }
 
 function viewLinkedCase() {

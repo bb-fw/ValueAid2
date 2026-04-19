@@ -158,16 +158,16 @@ function renderStats() {
   const el = document.getElementById('stats-bar'); if (!el) return;
   const all = VA.db.cases||[];
   const today = localISO(new Date());
-  const stages = c => getStages(c);
-  const isComplete = c => c.stage && c.stage === stages(c)[stages(c).length-1];
-  const completed = all.filter(isComplete).length;
+  const completed = all.filter(isCaseComplete).length;
   const ongoing = all.length - completed;
-  // Upcoming inspections = cases with inspDate >= today and not complete
-  const upcoming = all.filter(c => c.inspDate && c.inspDate > today && !isComplete(c)).length;
+  // Upcoming = future inspDate, not complete
+  const upcoming = all.filter(c => c.inspDate && c.inspDate > today && !isCaseComplete(c)).length;
+  // Inspected = past/today inspDate, not marked complete (inspection done but case still open)
+  const inspected = all.filter(c => c.inspDate && c.inspDate <= today && !isCaseComplete(c)).length;
   el.innerHTML =
     `<div class="stat-cell"><div class="stat-num" style="color:var(--bl)">${ongoing}</div><div class="stat-lbl">Ongoing</div></div>` +
     `<div class="stat-cell"><div class="stat-num" style="color:var(--am)">${upcoming}</div><div class="stat-lbl">Upcoming<br>Inspections</div></div>` +
-    `<div class="stat-cell"><div class="stat-num" style="color:var(--gn)">${completed}</div><div class="stat-lbl">Completed</div></div>`;
+    `<div class="stat-cell"><div class="stat-num" style="color:var(--gn)">${inspected}</div><div class="stat-lbl">Inspected</div></div>`;
 }
 
 // ── Render cases ──────────────────────────────────────────────
@@ -233,7 +233,7 @@ function renderCases() {
     const sideMap = { 'badge-assigned':'assigned', 'badge-progress':'progress', 'badge-delayed':'delayed', 'badge-complete':'complete' };
     const sideCls = sideMap[st.cls]||'assigned';
     const inspMeta = c.inspDate ? `<span>&#128197; ${VA.fmtDate(c.inspDate)}</span>` : '';
-    const clientMeta = c.client ? `<span>&#128100; ${VA.esc(c.client)}</span>` : '';
+    const phoneMeta = c.phone ? `<span>&#128222; ${VA.esc(c.phone)}</span>` : '';
     const linkedMeta = c.projectId ? `<span style="color:var(--gn)">&#128279;</span>` : '';
     const dlHtml = dl
       ? `<div class="${dl.cls}" style="font-size:10px;font-weight:600">${dl.txt}</div>${dl.sub ? `<div style="font-size:9px;color:var(--txmt)">${dl.sub}</div>` : ''}`
@@ -249,7 +249,7 @@ function renderCases() {
         <div class="case-bottom">
           <div class="case-meta-row">
             <span class="status-badge ${st.cls}">${VA.esc(st.label)}</span>
-            ${clientMeta}${inspMeta}${linkedMeta}
+            ${phoneMeta}${inspMeta}${linkedMeta}
           </div>
           ${dl ? `<div class="case-dl">${dlHtml}</div>` : ''}
         </div>
