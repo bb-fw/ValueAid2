@@ -4,7 +4,7 @@
 A Progressive Web App (PWA) for property valuers in Singapore. It manages inspection projects, a case tracker pipeline, travel logging, and a calendar. Built as a fully offline-capable static site with no backend — all data lives in `localStorage` under the key `valueaid_v5`.
 
 ## Deployment
-- **Repo:** https://github.com/bb-fw/ValueAid
+- **Repo:** https://github.com/bb-fw/ValueAid2
 - **Live:** https://value-aid2.vercel.app
 - **Current version:** v1.3.1 (sw.js cache key `valueaid-v1.3.1`)
 - Versioning: `v1.x.y` — minor version for new features, patch for fixes. Bump sw.js cache key on every release.

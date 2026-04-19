@@ -4,25 +4,41 @@
 // localStorage (app data) is never touched by this process.
 const CACHE = 'valueaid-v1.3.1';
 
+// Core assets — all must exist. addAll is atomic: if any 404s, install fails.
 const ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
   './calendar.html', './settings.html',
   './css/styles.css', './js/db.js', './js/ui.js', './js/picker.js', './js/editor-core.js', './js/editor-findings.js', './js/editor-notes.js', './js/editor-camera.js', './css/editor.css',
-  './js/export.js', './js/jspdf.umd.min.js', './js/xlsx.full.min.js', './manifest.json',
+  './js/export.js', './manifest.json',
   './icons/icon-192.png', './icons/icon-512.png'
 ];
 
-// Install: cache all app files
+// Optional assets — cached individually if available, silently skipped if missing.
+// Once js/jspdf.umd.min.js and js/xlsx.full.min.js are pushed to the repo,
+// they will be picked up automatically on next install without changing this file.
+const OPTIONAL_ASSETS = [
+  './js/jspdf.umd.min.js',
+  './js/xlsx.full.min.js'
+];
+
+// Install: cache core files atomically, then try optional files individually.
+// A missing optional file never breaks the install or the offline capability.
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS))
+    caches.open(CACHE).then(cache =>
+      cache.addAll(ASSETS).then(() =>
+        Promise.all(
+          OPTIONAL_ASSETS.map(url =>
+            fetch(url).then(r => { if (r.ok) cache.put(url, r); }).catch(() => {})
+          )
+        )
+      )
+    )
   );
-  // Activate immediately without waiting for old tabs to close
   self.skipWaiting();
 });
 
 // Activate: delete any cache with a different name (i.e. old versions)
-// localStorage is completely separate and unaffected
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -33,7 +49,6 @@ self.addEventListener('activate', e => {
 });
 
 // Fetch: serve from cache, fall back to network
-// Uses cache-first strategy so app works offline
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./index.html')))
