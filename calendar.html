@@ -121,8 +121,14 @@ function renderEvs(date, ev){
   // All inspections (standalone projects + case inspections) under one header
   const allInsp = e.inspections.length + e.caseInspections.length;
   if(allInsp){
+    // Merge and sort all inspections by time ascending; no time sorts last
+    const timeVal = t => (t||'99:99').replace(':','');
+    const combined = [
+      ...e.inspections.map(p=>({type:'proj',data:p,t:timeVal(p.time)})),
+      ...e.caseInspections.map(c=>({type:'case',data:c,t:timeVal(c.inspTime)}))
+    ].sort((a,b)=>a.t<b.t?-1:a.t>b.t?1:0);
     html+=`<div class="sh mt8"><h2 style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gd);display:inline-block"></span>Inspections — ${VA.fmtDateLong(date)}</h2></div>`;
-    html+=e.inspections.map(p=>`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
+    html+=combined.map(({type,data:p})=>type==='proj'?`<div class="ev-item" onclick="location.href='editor.html?id=${p.id}'">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
         <div style="flex:1;min-width:0">
           <div class="ev-time">${VA.esc(p.time||'Time not set')} &bull; ${VA.esc(p.ptype||'Property')}</div>
@@ -131,15 +137,15 @@ function renderEvs(date, ev){
         </div>
         ${p.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(p.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
       </div>
-    </div>`).join('');
-    html+=e.caseInspections.map(c=>`<div class="ev-item" onclick="location.href='case-editor.html?id=${VA.esc(c.id)}'">
+    </div>`
+    :`<div class="ev-item" onclick="location.href='case-editor.html?id=${VA.esc(p.id)}'">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">
         <div style="flex:1;min-width:0">
-          <div class="ev-time">${VA.esc(c.inspTime||'Time not set')}${c.ref?' &bull; Ref #'+VA.esc(c.ref):''}</div>
-          <div class="ev-title">${VA.esc(c.addr||'No address')}</div>
-          <div class="ev-sub">${c.client?'Client: '+VA.esc(c.client):''}${c.delayed?' &bull; <span style="color:var(--am)">Delayed</span>':''}</div>
+          <div class="ev-time">${VA.esc(p.inspTime||'Time not set')}${p.ref?' &bull; Ref #'+VA.esc(p.ref):''}</div>
+          <div class="ev-title">${VA.esc(p.addr||'No address')}</div>
+          <div class="ev-sub">${p.client?'Client: '+VA.esc(p.client):''}${p.delayed?' &bull; <span style="color:var(--am)">Delayed</span>':''}</div>
         </div>
-        ${c.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(c.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
+        ${p.addr?`<button onclick="event.stopPropagation();openInMaps('${VA.esc(p.addr)}')" class="btn bs bxs" style="font-size:11px;padding:3px 7px;flex-shrink:0;margin-top:2px">&#128205;</button>`:''}
       </div>
     </div>`).join('');
   }

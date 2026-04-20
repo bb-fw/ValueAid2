@@ -313,13 +313,17 @@ function createProject() {
     const c = (VA.db.cases||[]).find(x => x.id === fromCaseId);
     if (c) { p.caseId = c.id; c.projectId = p.id; delete document.getElementById('ov-new').dataset.fromCase; }
   }
+  // Apply inspection date/time from case if present
+  const _ovNew = document.getElementById('ov-new');
+  if (_ovNew.dataset.fromDate) { p.date = _ovNew.dataset.fromDate; delete _ovNew.dataset.fromDate; }
+  if (_ovNew.dataset.fromTime) { p.time = _ovNew.dataset.fromTime; delete _ovNew.dataset.fromTime; }
   VA.db.projects.push(p); VA.save();
   closeOv('ov-new');
   toast('Project created');
   setTimeout(() => location.href = 'editor.html?id='+p.id, 200);
 }
 
-function openNewProjectFromCase(c) {
+function openNewProjectFromCase(c, pending) {
   // Open the project sheet normally first (populates dropdowns + template)
   openNewProject();
   // Then override fields with case data
@@ -331,8 +335,11 @@ function openNewProjectFromCase(c) {
     const sel = document.getElementById('np-ptype');
     if (sel) [...sel.options].forEach(o => { if(o.text===c.ptype||o.value===c.ptype) sel.value=o.value; });
   }
-  // Store caseId for linking after creation
-  document.getElementById('ov-new').dataset.fromCase = c.id;
+  // Store caseId + date/time for applying after project creation
+  const _ov = document.getElementById('ov-new');
+  _ov.dataset.fromCase = c.id;
+  _ov.dataset.fromDate = (pending&&pending.inspDate)||c.inspDate||'';
+  _ov.dataset.fromTime = (pending&&pending.inspTime)||c.inspTime||'';
 }
 
 pageInit();
@@ -347,7 +354,7 @@ pageInit();
         const c = (VA.db.cases||[]).find(x => x.id === pending.caseId);
         if (c) {
           sessionStorage.removeItem('va_new_from_case');
-          openNewProjectFromCase(c);
+          openNewProjectFromCase(c, pending);
           history.replaceState(null, '', 'index.html');
           return;
         }

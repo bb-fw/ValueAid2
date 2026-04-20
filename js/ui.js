@@ -159,6 +159,9 @@ function _updateMethodRows(containerId, context) {
   if (taxiRow) taxiRow.style.display = (hasTaxi && context === 'end') ? 'block' : 'none';
   const eTaxiRow = document.getElementById('etaxi-row');
   if (eTaxiRow) eTaxiRow.style.display = hasTaxi ? 'block' : 'none';
+  // Taxi fare at START (optional pre-entry)
+  const sTaxiRow = document.getElementById('stax-row');
+  if (sTaxiRow) sTaxiRow.style.display = hasTaxi ? 'block' : 'none';
 }
 function getSelectedMethods(containerId) {
   return [...document.querySelectorAll(`#${containerId} .mchk.on`)].map(x => x.dataset.method);

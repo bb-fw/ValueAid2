@@ -361,7 +361,9 @@ function viewLinkedProject() {
 function createLinkedProject() {
   const c=gC(); if(!c) return;
   ceSave();
-  try { sessionStorage.setItem('va_new_from_case', JSON.stringify({caseId:c.id})); } catch(e) {}
+  try { sessionStorage.setItem('va_new_from_case', JSON.stringify({
+    caseId:c.id, inspDate:c.inspDate||'', inspTime:c.inspTime||''
+  })); } catch(e) {}
   location.href='index.html?fromCase=1';
 }
 
