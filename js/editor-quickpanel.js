@@ -32,7 +32,24 @@ function qpDone() {
 
 function qpFilter(q) {
   const lq = q.trim().toLowerCase();
-  const filtered = lq ? _qpRows.filter(r => r.label.toLowerCase().includes(lq)) : _qpRows;
+  if (!lq) { renderQpList(_qpRows); return; }
+  // Positional split on ' - ' or ' x '
+  const delim = lq.includes(' - ') ? ' - ' : lq.includes(' x ') ? ' x ' : null;
+  let filtered;
+  if (delim) {
+    const parts = lq.split(delim).map(p => p.trim()).filter(Boolean);
+    const left = parts[0] || '';
+    const right = parts[1] || '';
+    filtered = _qpRows.filter(r => {
+      const lbl = r.labelRaw.toLowerCase();
+      const dashIdx = lbl.indexOf(' - ');
+      const prefix = dashIdx >= 0 ? lbl.slice(0, dashIdx) : lbl;
+      const suffix = dashIdx >= 0 ? lbl.slice(dashIdx + 3) : lbl;
+      return (!left || prefix.includes(left)) && (!right || suffix.includes(right));
+    });
+  } else {
+    filtered = _qpRows.filter(r => r.labelRaw.toLowerCase().includes(lq));
+  }
   renderQpList(filtered);
 }
 
@@ -49,8 +66,8 @@ function buildQpRows(p) {
         (ud.items||[]).forEach((item, ii) => {
           rows.push({
             section: 'unit',
-            label: `${VA.esc(u.name||'Unit')} — ${VA.esc(cat.name)} — ${VA.esc(item.name)}`,
-            labelRaw: `${u.name||'Unit'} — ${cat.name} — ${item.name}`,
+            label: `${VA.esc(u.name||'Unit')} - ${VA.esc(cat.name)} - ${VA.esc(item.name)}`,
+            labelRaw: `${u.name||'Unit'} - ${cat.name} - ${item.name}`,
             sel: !!item.sel,
             toggle() {
               // Re-resolve live references each time (avoids stale closure)
@@ -75,8 +92,8 @@ function buildQpRows(p) {
       (cat.items||[]).forEach((item, ii) => {
         rows.push({
           section: 'findings',
-          label: `${VA.esc(cat.name)} — ${VA.esc(item.name)}`,
-          labelRaw: `${cat.name} — ${item.name}`,
+          label: `${VA.esc(cat.name)} - ${VA.esc(item.name)}`,
+          labelRaw: `${cat.name} - ${item.name}`,
           sel: !!item.sel,
           toggle() {
             const pp = gP(); if (!pp) return;
@@ -101,8 +118,8 @@ function buildQpRows(p) {
         const inLevel = (lv.rooms||[]).includes(room);
         rows.push({
           section: 'accom',
-          label: `${VA.esc(lv.name)} — ${VA.esc(room)}`,
-          labelRaw: `${lv.name} — ${room}`,
+          label: `${VA.esc(lv.name)} - ${VA.esc(room)}`,
+          labelRaw: `${lv.name} - ${room}`,
           sel: inLevel,
           toggle() {
             const pp = gP(); if (!pp) return;
@@ -158,9 +175,9 @@ function renderQpList(rows) {
     secRows.forEach((r, idx) => {
       // Use index into _qpRows as stable identifier
       const globalIdx = _qpRows.indexOf(r);
-      html += `<div class="qp-row ${r.sel?'qp-sel':''}" data-idx="${globalIdx}" onclick="qpToggle(${globalIdx},this)">
+      html += `<div class="picker-item qp-row ${r.sel?'selected':''}" data-idx="${globalIdx}" onclick="qpToggle(${globalIdx},this)">
+        <div class="picker-check">${r.sel?'&#10003;':''}</div>
         <span class="qp-label">${r.label}</span>
-        <span class="qp-chip ${r.sel?'on':''}">&#10003;</span>
       </div>`;
     });
   });
@@ -170,8 +187,7 @@ function renderQpList(rows) {
 function qpToggle(idx, el) {
   const r = _qpRows[idx]; if (!r) return;
   r.toggle();
-  // Update just this row's visual state
-  el.classList.toggle('qp-sel', r.sel);
-  const chip = el.querySelector('.qp-chip');
-  if (chip) chip.classList.toggle('on', r.sel);
+  el.classList.toggle('selected', r.sel);
+  const chk = el.querySelector('.picker-check');
+  if (chk) chk.innerHTML = r.sel ? '&#10003;' : '';
 }

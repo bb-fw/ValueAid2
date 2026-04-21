@@ -1,5 +1,5 @@
 // ─── Bump this version string on every release ───────────────
-const CACHE = 'valueaid-v1.3.8';
+const CACHE = 'valueaid-v1.3.9';
 
 const ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
