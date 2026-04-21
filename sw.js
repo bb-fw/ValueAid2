@@ -1,12 +1,12 @@
 // ─── Bump this version string on every release ───────────────
-const CACHE = 'valueaid-v1.3.7';
+const CACHE = 'valueaid-v1.3.8';
 
 const ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
   './calendar.html', './settings.html',
   './css/styles.css', './css/editor.css',
   './js/db.js', './js/ui.js', './js/picker.js',
-  './js/editor-core.js', './js/editor-findings.js', './js/editor-notes.js', './js/editor-camera.js',
+  './js/editor-core.js', './js/editor-findings.js', './js/editor-notes.js', './js/editor-camera.js', './js/editor-quickpanel.js',
   './js/export.js',
   './js/jspdf.umd.min.js',
   './js/xlsx.full.min.js',

@@ -27,6 +27,7 @@
         <div class="cat-menu-item danger" onclick="closeEditorMenu();editorDeleteAction()">&#10005; Delete</div>
       </div>
     </div>
+    <button class="btn bs bsm" onclick="openQuickPanel()" title="Quick Add / Remove">&#9889;</button>
     <button class="btn bs bsm" onclick="doExportPDF()">&#128196; PDF</button>
     <button class="btn bs bsm" style="font-size:16px;padding:6px 10px" onclick="openCameraTag()" title="Take Photo">&#128247;</button>
     <button class="btn bp" style="flex:1" onclick="saveClose()">Close</button>
@@ -112,12 +113,31 @@
 
 <script src="js/jspdf.umd.min.js"></script>
 <script src="js/db.js"></script>
+
+<!-- QUICK ADD/REMOVE PANEL -->
+<div class="overlay" id="qp-ov">
+  <div class="sheet" style="max-height:92vh;display:flex;flex-direction:column">
+    <div id="qp-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0"></div>
+    <div style="flex-shrink:0;padding:10px 16px;border-top:1px solid var(--bd);background:var(--sf)">
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" id="qp-search" placeholder="Search…" style="padding-left:32px"
+               oninput="qpFilter(this.value)">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:15px;font-weight:600">Quick Add / Remove</span>
+        <button class="btn bp bsm" onclick="qpDone()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="js/ui.js"></script>
 <script src="js/picker.js"></script>
 <script src="js/export.js"></script>
 <script src="js/editor-notes.js"></script>
 <script src="js/editor-findings.js"></script>
 <script src="js/editor-camera.js"></script>
+<script src="js/editor-quickpanel.js"></script>
 <script src="js/editor-core.js"></script>
 <script>
 // Thin init — all logic lives in the JS modules above
