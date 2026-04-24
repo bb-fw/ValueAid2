@@ -300,7 +300,7 @@ function newCase() {
     inspDate:'', inspTime:'',
     createdAt: today, deadline:'',
     stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
-    autoMode: true, autoComplete: false,
+    autoMode: (VA.db.settings&&VA.db.settings.defaultAutoMode!==false)||true, autoComplete: false,
     delayed: false, notes:'',
     checklistId: defaultCl ? defaultCl.id : '',
     checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],

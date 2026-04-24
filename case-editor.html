@@ -211,6 +211,11 @@ function markAutoComplete(){
   c.autoComplete=true;VA.save();renderProgList(c);
   toast('Case marked complete');
 }
+function unmarkAutoComplete(){
+  const c=gC();if(!c)return;
+  c.autoComplete=false;VA.save();renderProgList(c);
+  toast('Marked incomplete');
+}
 
 // ── Progress pipeline ─────────────────────────────────────────
 function renderProgList(c) {
@@ -227,7 +232,7 @@ function renderProgList(c) {
         '<div class="prog-dot">'+(active?(done?'✓':'●'):(past?'✓':''))+'</div>' +
         '<span class="prog-label">'+VA.esc(st)+'</span></div>';
     }).join('') +
-    (!done ? '<button class="btn bp" style="width:100%;margin-top:12px" onclick="markAutoComplete()">&#10003; Mark Case Complete</button>' : '');
+    (!done ? '<button class="btn bp" style="width:100%;margin-top:12px" onclick="markAutoComplete()">&#10003; Mark Case Complete</button>' : '<button class="btn bs" style="width:100%;margin-top:12px" onclick="unmarkAutoComplete()">&#8617; Undo Complete</button>');
     return;
   }
 

@@ -44,8 +44,14 @@ function qpFilter(q) {
     const parts = lq.split(delim).map(p => p.trim());
     filtered = _qpRows.filter(r => {
       const segs = r.labelRaw.map(s => s.toLowerCase());
+      const lastPartIdx = parts.length - 1;
       return parts.every((part, i) => {
-        if (!part) return true; // empty part = no constraint on this segment
+        if (!part) return true;
+        // Last typed part: if it doesn't correspond to a specific remaining single segment,
+        // search all remaining segments (fuzzy: 'living x timber' matches living unit, any cat/item with 'timber')
+        if (i === lastPartIdx && i < segs.length - 1) {
+          return segs.slice(i).some(seg => seg.includes(part));
+        }
         const seg = i < segs.length ? segs[i] : segs[segs.length - 1];
         return seg.includes(part);
       });

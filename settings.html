@@ -72,6 +72,16 @@
       <!-- ── CASE TRACKER ───────────────────────────────────── -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">Case Tracker</div>
 
+      <div class="card mb12">
+        <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:13px;font-weight:600">Default Progress Mode</div>
+            <div class="hint" style="margin-top:2px">Applied when creating new cases</div>
+          </div>
+          <button id="default-mode-tog" class="tog-btn" onclick="toggleDefaultProgressMode()"><span id="default-mode-lbl"></span></button>
+        </div>
+      </div>
+
       <!-- CHECKLIST -->
       <div class="card mb12">
         <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Progress Markers</h3><span class="chev">&#9660;</span></div>
@@ -818,6 +828,7 @@ renderRLList();
 populateTplSelect();
 loadTplEditor();
 renderCLList();
+renderDefaultModeTog();
 renderStorageIndicator();
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
 
@@ -957,6 +968,20 @@ function saveChecklistEditor() {
   VA.save(); closeOv('ov-cl-edit'); renderCLList(); toast('Checklist saved');
 }
 
+function renderDefaultModeTog() {
+  const isAuto = VA.db.settings.defaultAutoMode !== false;
+  const btn = document.getElementById('default-mode-tog');
+  const lbl = document.getElementById('default-mode-lbl');
+  if (!btn||!lbl) return;
+  lbl.textContent = isAuto ? 'Auto' : 'Manual';
+  btn.classList.toggle('on', isAuto);
+}
+function toggleDefaultProgressMode() {
+  if (!VA.db.settings) VA.db.settings = {};
+  VA.db.settings.defaultAutoMode = VA.db.settings.defaultAutoMode === false ? true : false;
+  VA.save(); renderDefaultModeTog();
+}
+
 function deleteChecklist(id) {
   const cl = (VA.db.checklists||[]).find(x=>x.id===id); if (!cl) return;
   const inUse = (VA.db.cases||[]).filter(c=>c.checklistId===id).length;
@@ -969,5 +994,6 @@ function deleteChecklist(id) {
 }
 
 </script>
+<div style="text-align:center;padding:20px 0 32px;font-size:11px;color:var(--txmt)">ValueAid v1.3.12</div>
 </body>
 </html>

@@ -349,10 +349,24 @@ function openAddUnitPicker() {
   if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p) return;
   const rooms = (p.roomSnapshot&&p.roomSnapshot.length) ? p.roomSnapshot : VA.getActiveRooms();
-  VA_PICKER.openSingle(
-    'Add Unit / Room', rooms,
-    (name) => { addUnit(name); },
-    (name) => { addUnit(name); }
+  const existing = new Set((p.levels||[]).map(u=>u.name));
+  VA_PICKER.openMulti(
+    'Add Unit / Room', rooms, existing,
+    (name, nowSel) => {
+      if (nowSel) { if (!existing.has(name)) addUnit(name); existing.add(name); }
+      else {
+        // Remove unit if user deselects (only if it exists and has no findings)
+        const idx = (p.levels||[]).findIndex(u=>u.name===name);
+        if (idx>=0) {
+          const u = p.levels[idx];
+          const hasFin = (u.cats||[]).some(c=>(c.items||[]).some(i=>i.sel||i.notes));
+          if (!hasFin) { p.levels.splice(idx,1); existing.delete(name); VA.save(); renderUnits(p,getOpenUnits()); }
+          else toast('Cannot remove "'+name+'" — it has findings');
+        }
+      }
+    },
+    (name) => { addUnit(name); existing.add(name); },
+    () => { renderUnits(p, getOpenUnits()); }
   );
 }
 
