@@ -371,7 +371,10 @@ function openAddUnitPicker() {
           const idx = (p.levels||[]).findIndex(u=>u.name===name);
           if (idx>=0) {
             const u = p.levels[idx];
-            const hasFin = (u.cats||[]).some(c=>(c.items||[]).some(i=>i.sel||i.notes));
+            const hasFin = (u.cats||[]).some(c => {
+              const ck = catKey(c); const ud = u.catData && u.catData[ck];
+              return (ud ? ud.items : c.items||[]).some(i => i.sel || (i.notes && i.notes.trim()));
+            });
             if (!hasFin) p.levels.splice(idx,1);
             else toast('Kept "'+name+'" — it has findings');
           }
