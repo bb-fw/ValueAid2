@@ -175,7 +175,9 @@ function buildCase(c) {
     '<div class="sectlbl" style="margin:0">Progress</div>' +
     '<div style="display:flex;align-items:center;gap:8px">' +
     '<button id="delayed-tog" class="' + delayedCls + '" style="' + delayedStyle + '" onclick="toggleDelayed()">&#9200; Delayed</button>' +
-    '<button class="btn bs bsm" onclick="addProgressStage()">+ Add</button>' +
+    '<button id="auto-mode-tog" class="btn bsm ' + (c.autoMode!==false?'bp':'bs') + '" onclick="toggleAutoMode()" title="Switch between Auto and Manual progress tracking">'
+      + (c.autoMode!==false ? '&#9881; Auto' : '&#9998; Manual') + '</button>' +
+    '<button class="btn bs bsm" id="add-stage-btn" style="' + (c.autoMode!==false?'display:none':'') + '" onclick="addProgressStage()">+ Add</button>' +
     '</div></div>' +
     '<div id="prog-list"></div>' +
 
@@ -187,9 +189,49 @@ function buildCase(c) {
   ceRefInput(c.ref||'');
 }
 
+// ── Auto stage helpers (mirrors tracker.html) ────────────────
+const AUTO_STAGES=['Case Created','Inspection Booked','Inspection Completed','Case Complete'];
+function getAutoStage(c){
+  if(c.autoComplete)return AUTO_STAGES[3];
+  if(c.inspDate){
+    const dt=c.inspTime?new Date(c.inspDate+'T'+c.inspTime):new Date(c.inspDate+'T23:59:59');
+    return new Date()>=dt?AUTO_STAGES[2]:AUTO_STAGES[1];
+  }
+  return AUTO_STAGES[0];
+}
+
+function toggleAutoMode(){
+  const c=gC();if(!c)return;
+  c.autoMode=c.autoMode===false?true:false;
+  VA.save();buildCase(c);
+}
+
+function markAutoComplete(){
+  const c=gC();if(!c)return;
+  c.autoComplete=true;VA.save();renderProgList(c);
+  toast('Case marked complete');
+}
+
 // ── Progress pipeline ─────────────────────────────────────────
 function renderProgList(c) {
   const el = document.getElementById('prog-list'); if (!el) return;
+  const isAuto = c.autoMode !== false;
+
+  if (isAuto) {
+    const cur = getAutoStage(c);
+    const done = !!c.autoComplete;
+    el.innerHTML = AUTO_STAGES.map((st,i) => {
+      const active = cur===st;
+      const past = AUTO_STAGES.indexOf(cur)>i;
+      return '<div class="prog-item'+(active?' active':'')+(done&&st===AUTO_STAGES[3]?' complete':'')+'">' +
+        '<div class="prog-dot">'+(active?(done?'✓':'●'):(past?'✓':''))+'</div>' +
+        '<span class="prog-label">'+VA.esc(st)+'</span></div>';
+    }).join('') +
+    (!done ? '<button class="btn bp" style="width:100%;margin-top:12px" onclick="markAutoComplete()">&#10003; Mark Case Complete</button>' : '');
+    return;
+  }
+
+  // Manual mode
   const stages = c.checklistSnapshot || VA.BUILTIN_STAGES;
   const currentStage = c.stage || (stages[0]||'');
   const lastIdx = stages.length - 1;

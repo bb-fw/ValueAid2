@@ -106,11 +106,12 @@ function getStages(c) {
 
 function caseStatus(c) {
   if (c.delayed) return { label:'Delayed', cls:'badge-delayed' };
-  const stage = c.stage || '';
-  const stages = getStages(c);
-  if (!stage || stage === stages[0]) return { label: stages[0]||'Assigned', cls:'badge-assigned' };
-  if (stage === stages[stages.length-1]) return { label: stage, cls:'badge-complete' };
-  return { label: stage, cls:'badge-progress' };
+  const isAuto=c.autoMode!==false;
+  const stage=getEffectiveStage(c);
+  const stages=isAuto?AUTO_STAGES:getStages(c);
+  if (!stage||stage===stages[0]) return { label:stages[0]||'Assigned', cls:'badge-assigned' };
+  if (stage===stages[stages.length-1]) return { label:stage, cls:'badge-complete' };
+  return { label:stage, cls:'badge-progress' };
 }
 
 function deadlineLabel(deadline) {
@@ -140,9 +141,10 @@ function deadlineLabel(deadline) {
 }
 
 function pipelineBar(c) {
-  const stages = getStages(c);
-  let currentIdx = stages.indexOf(c.stage||'');
-  if (currentIdx < 0) currentIdx = 0; // default to first stage if not set
+  const isAuto=c.autoMode!==false;
+  const stages=isAuto?AUTO_STAGES:getStages(c);
+  let currentIdx=stages.indexOf(getEffectiveStage(c));
+  if(currentIdx<0)currentIdx=0;
   return stages.map((st, i) => {
     let cls = 'pip-stage';
     if (c.delayed && i === currentIdx) cls += ' delayed';
@@ -153,17 +155,39 @@ function pipelineBar(c) {
 }
 
 // ── Render stats bar ─────────────────────────────────────────
-const isCaseComplete = c => { const stg=getStages(c); return c.stage && c.stage===stg[stg.length-1]; };
+const AUTO_STAGES=['Case Created','Inspection Booked','Inspection Completed','Case Complete'];
+function getAutoStage(c){
+  if(c.autoComplete)return AUTO_STAGES[3];
+  if(c.inspDate){
+    const dt=c.inspTime?new Date(c.inspDate+'T'+c.inspTime):new Date(c.inspDate+'T23:59:59');
+    return new Date()>=dt?AUTO_STAGES[2]:AUTO_STAGES[1];
+  }
+  return AUTO_STAGES[0];
+}
+function getEffectiveStage(c){
+  return (c.autoMode!==false)?getAutoStage(c):(c.stage||getStages(c)[0]||'');
+}
+const isCaseComplete=c=>{
+  if(c.autoMode!==false)return !!c.autoComplete;
+  const stg=getStages(c);return c.stage&&c.stage===stg[stg.length-1];
+};
 function renderStats() {
   const el = document.getElementById('stats-bar'); if (!el) return;
   const all = VA.db.cases||[];
   const today = localISO(new Date());
   const completed = all.filter(isCaseComplete).length;
   const ongoing = all.length - completed;
-  // Upcoming = future inspDate, not complete
-  const upcoming = all.filter(c => c.inspDate && c.inspDate > today && !isCaseComplete(c)).length;
-  // Inspected = past/today inspDate, not marked complete (inspection done but case still open)
-  const inspected = all.filter(c => c.inspDate && c.inspDate <= today && !isCaseComplete(c)).length;
+  const nowMs=Date.now();
+  const upcoming=all.filter(c=>{
+    if(!c.inspDate||isCaseComplete(c))return false;
+    const dt=c.inspTime?new Date(c.inspDate+'T'+c.inspTime):new Date(c.inspDate+'T23:59:59');
+    return dt.getTime()>nowMs;
+  }).length;
+  const inspected=all.filter(c=>{
+    if(!c.inspDate||isCaseComplete(c))return false;
+    const dt=c.inspTime?new Date(c.inspDate+'T'+c.inspTime):new Date(c.inspDate+'T23:59:59');
+    return dt.getTime()<=nowMs;
+  }).length;
   el.innerHTML =
     `<div class="stat-cell"><div class="stat-num" style="color:var(--bl)">${ongoing}</div><div class="stat-lbl">Ongoing</div></div>` +
     `<div class="stat-cell"><div class="stat-num" style="color:var(--am)">${upcoming}</div><div class="stat-lbl">Upcoming<br>Inspections</div></div>` +
@@ -193,9 +217,9 @@ function renderCases() {
 
   // Progress stage: # of stages completed = index of current stage in snapshot
   const stageProgress = c => {
-    const stg = getStages(c);
-    const idx = stg.indexOf(c.stage||'');
-    return idx < 0 ? 0 : idx;
+    const isAuto=c.autoMode!==false;
+    const stg=isAuto?AUTO_STAGES:getStages(c);
+    return Math.max(0,stg.indexOf(getEffectiveStage(c)));
   };
 
   cases.sort((a, b) => {
@@ -276,6 +300,7 @@ function newCase() {
     inspDate:'', inspTime:'',
     createdAt: today, deadline:'',
     stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
+    autoMode: true, autoComplete: false,
     delayed: false, notes:'',
     checklistId: defaultCl ? defaultCl.id : '',
     checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],

@@ -33,22 +33,26 @@ function qpDone() {
 function qpFilter(q) {
   const lq = q.trim().toLowerCase();
   if (!lq) { renderQpList(_qpRows); return; }
-  // Positional split on ' - ' or ' x '
+  // Detect positional delimiter ' - ' or ' x '
   const delim = lq.includes(' - ') ? ' - ' : lq.includes(' x ') ? ' x ' : null;
   let filtered;
   if (delim) {
-    const parts = lq.split(delim).map(p => p.trim()).filter(Boolean);
-    const left = parts[0] || '';
-    const right = parts[1] || '';
+    // Split query into parts; each part matched against the corresponding label segment
+    // labelRaw is stored as an array so item names containing dashes never cause mis-splits
+    // Standard (2-part): ["cat","item"]        → parts[0] vs seg[0], parts[1] vs seg[1]
+    // Per-unit (3-part): ["unit","cat","item"]  → parts[0] vs seg[0], etc.
+    const parts = lq.split(delim).map(p => p.trim());
     filtered = _qpRows.filter(r => {
-      const lbl = r.labelRaw.toLowerCase();
-      const dashIdx = lbl.indexOf(' - ');
-      const prefix = dashIdx >= 0 ? lbl.slice(0, dashIdx) : lbl;
-      const suffix = dashIdx >= 0 ? lbl.slice(dashIdx + 3) : lbl;
-      return (!left || prefix.includes(left)) && (!right || suffix.includes(right));
+      const segs = r.labelRaw.map(s => s.toLowerCase());
+      return parts.every((part, i) => {
+        if (!part) return true; // empty part = no constraint on this segment
+        const seg = i < segs.length ? segs[i] : segs[segs.length - 1];
+        return seg.includes(part);
+      });
     });
   } else {
-    filtered = _qpRows.filter(r => r.labelRaw.toLowerCase().includes(lq));
+    // Plain search: match against the full joined label
+    filtered = _qpRows.filter(r => r.labelRaw.join(' - ').toLowerCase().includes(lq));
   }
   renderQpList(filtered);
 }
@@ -67,7 +71,7 @@ function buildQpRows(p) {
           rows.push({
             section: 'unit',
             label: `${VA.esc(u.name||'Unit')} - ${VA.esc(cat.name)} - ${VA.esc(item.name)}`,
-            labelRaw: `${u.name||'Unit'} - ${cat.name} - ${item.name}`,
+            labelRaw: [u.name||'Unit', cat.name, item.name],
             sel: !!item.sel,
             toggle() {
               // Re-resolve live references each time (avoids stale closure)
@@ -93,7 +97,7 @@ function buildQpRows(p) {
         rows.push({
           section: 'findings',
           label: `${VA.esc(cat.name)} - ${VA.esc(item.name)}`,
-          labelRaw: `${cat.name} - ${item.name}`,
+          labelRaw: [cat.name, item.name],
           sel: !!item.sel,
           toggle() {
             const pp = gP(); if (!pp) return;
@@ -119,7 +123,7 @@ function buildQpRows(p) {
         rows.push({
           section: 'accom',
           label: `${VA.esc(lv.name)} - ${VA.esc(room)}`,
-          labelRaw: `${lv.name} - ${room}`,
+          labelRaw: [lv.name, room],
           sel: inLevel,
           toggle() {
             const pp = gP(); if (!pp) return;
