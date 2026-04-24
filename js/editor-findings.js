@@ -349,24 +349,36 @@ function openAddUnitPicker() {
   if(gP()&&gP().archived){toast('Project is archived');return;}
   const p=gP(); if(!p) return;
   const rooms = (p.roomSnapshot&&p.roomSnapshot.length) ? p.roomSnapshot : VA.getActiveRooms();
-  const existing = new Set((p.levels||[]).map(u=>u.name));
+  // Build selSet from current units — picker shows which rooms are already added
+  const selSet = new Set((p.levels||[]).map(u=>u.name));
+  // Track pending changes so we apply them all on Done (not per-tap)
+  const pending = new Set(selSet); // copy of initial state
   VA_PICKER.openMulti(
-    'Add Unit / Room', rooms, existing,
+    'Add Unit / Room', rooms, new Set(selSet),
     (name, nowSel) => {
-      if (nowSel) { if (!existing.has(name)) addUnit(name); existing.add(name); }
-      else {
-        // Remove unit if user deselects (only if it exists and has no findings)
-        const idx = (p.levels||[]).findIndex(u=>u.name===name);
-        if (idx>=0) {
-          const u = p.levels[idx];
-          const hasFin = (u.cats||[]).some(c=>(c.items||[]).some(i=>i.sel||i.notes));
-          if (!hasFin) { p.levels.splice(idx,1); existing.delete(name); VA.save(); renderUnits(p,getOpenUnits()); }
-          else toast('Cannot remove "'+name+'" — it has findings');
-        }
-      }
+      // Track intent; do not write to p.levels yet
+      if (nowSel) pending.add(name); else pending.delete(name);
     },
-    (name) => { addUnit(name); existing.add(name); },
-    () => { renderUnits(p, getOpenUnits()); }
+    (name) => { pending.add(name); },
+    () => {
+      // Apply: add new, remove empty unchecked
+      const _open = getOpenUnits();
+      pending.forEach(name => {
+        if (!selSet.has(name)) addUnit(name);
+      });
+      selSet.forEach(name => {
+        if (!pending.has(name)) {
+          const idx = (p.levels||[]).findIndex(u=>u.name===name);
+          if (idx>=0) {
+            const u = p.levels[idx];
+            const hasFin = (u.cats||[]).some(c=>(c.items||[]).some(i=>i.sel||i.notes));
+            if (!hasFin) p.levels.splice(idx,1);
+            else toast('Kept "'+name+'" — it has findings');
+          }
+        }
+      });
+      VA.save(); renderUnits(p, _open);
+    }
   );
 }
 
