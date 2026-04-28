@@ -1,8 +1,6 @@
 // ─── Bump this version string on every release ───────────────
-const CACHE = 'valueaid-v1.3.17';
+const CACHE = 'valueaid-v1.3.18';
 
-// Core assets — small, essential for app to function offline.
-// Cached atomically: all must succeed or install fails.
 const CORE_ASSETS = [
   './', './index.html', './editor.html', './tracker.html', './case-editor.html', './travel.html',
   './calendar.html', './settings.html',
@@ -14,8 +12,6 @@ const CORE_ASSETS = [
   './icons/icon-192.png', './icons/icon-512.png'
 ];
 
-// Library assets — large, needed only for export features (~1.2MB).
-// Cached individually so a failure here never breaks core app caching.
 const LIB_ASSETS = [
   './js/jspdf.umd.min.js',
   './js/xlsx.full.min.js'
@@ -24,15 +20,11 @@ const LIB_ASSETS = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache =>
-      // Step 1: cache core assets atomically — this must fully succeed
       cache.addAll(CORE_ASSETS).then(() =>
-        // Step 2: cache library files individually — failures are silently ignored
         Promise.all(
-          LIB_ASSETS.map(url =>
-            cache.add(url).catch(() => {
-              console.warn('[SW] Library not cached (will retry on next fetch):', url);
-            })
-          )
+          LIB_ASSETS.map(url => cache.add(url).catch(() =>
+            console.warn('[SW] Library not cached:', url)
+          ))
         )
       )
     ).then(() => self.skipWaiting())
@@ -49,28 +41,26 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    // ignoreSearch: true — strips ?id=xxx so editor.html?id=abc matches cached editor.html
+    caches.match(e.request, { ignoreSearch: true }).then(cached => {
       if (cached) return cached;
-      // Not in cache — try network
       return fetch(e.request).then(response => {
-        // Cache library files on first successful fetch (progressive caching)
+        // Progressively cache library files on first successful fetch
         if (response.ok && LIB_ASSETS.some(url => e.request.url.endsWith(url.replace('./', '')))) {
           caches.open(CACHE).then(c => c.put(e.request, response.clone()));
         }
         return response;
       }).catch(() => {
-        // Network failed — only fall back to index.html for page navigation requests
-        const isNav = e.request.mode === 'navigate' ||
-          (e.request.headers.get('accept') || '').includes('text/html');
-        if (isNav) return caches.match('./index.html');
+        // Only fall back to index.html for page navigation (mode === 'navigate')
+        // NOT for all text/html requests — that's too broad and causes wrong-page fallbacks
+        if (e.request.mode === 'navigate') return caches.match('./index.html');
         return new Response('', { status: 503, statusText: 'Offline' });
       });
     })
   );
 });
 
-// ── Cache status reporting ────────────────────────────────────
-// Responds to a postMessage({ type: 'CACHE_STATUS' }) from the page
+// Cache status reporting for Settings page
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'CACHE_STATUS') {
     caches.open(CACHE).then(cache =>
@@ -79,12 +69,10 @@ self.addEventListener('message', e => {
         Promise.all(LIB_ASSETS.map(url => cache.match(url).then(r => !!r)))
       ])
     ).then(([coreResults, libResults]) => {
-      const coreTotal = CORE_ASSETS.length, coreCached = coreResults.filter(Boolean).length;
-      const libTotal  = LIB_ASSETS.length,  libCached  = libResults.filter(Boolean).length;
       e.source.postMessage({
         type: 'CACHE_STATUS_RESULT',
-        core: { cached: coreCached, total: coreTotal },
-        libs: { cached: libCached,  total: libTotal  }
+        core: { cached: coreResults.filter(Boolean).length, total: CORE_ASSETS.length },
+        libs: { cached: libResults.filter(Boolean).length,  total: LIB_ASSETS.length  }
       });
     });
   }
