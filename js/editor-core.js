@@ -163,7 +163,7 @@ function createCaseFromProject() {
     inspDate: p.date||'', inspTime: p.time||'',
     createdAt: _iso, deadline:'',
     stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
-    autoMode: (VA.db.settings&&VA.db.settings.defaultAutoMode!==false)||true, autoComplete: false,
+    autoMode: !(VA.db.settings&&VA.db.settings.defaultAutoMode===false), autoComplete: false,
     delayed: false, notes:'',
     checklistId: defaultCl ? defaultCl.id : '',
     checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],

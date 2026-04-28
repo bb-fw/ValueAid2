@@ -78,7 +78,7 @@
             <div style="font-size:13px;font-weight:600">Default Progress Mode</div>
             <div class="hint" style="margin-top:2px">Applied when creating new cases</div>
           </div>
-          <button id="default-mode-tog" class="tog-btn" onclick="toggleDefaultProgressMode()"><span id="default-mode-lbl"></span></button>
+          <button id="default-mode-tog" class="toggle" onclick="toggleDefaultProgressMode()"><span id="default-mode-lbl"></span></button>
         </div>
       </div>
 
@@ -209,7 +209,7 @@
         <div style="display:flex;flex-direction:column;gap:4px" id="cache-status-rows">Checking…</div>
       </div>
 
-      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.20 &bull; Property Valuer Toolkit</div>
+      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.21 &bull; Property Valuer Toolkit</div>
     </div>
   </div>
   <nav class="bottom-nav">
@@ -765,7 +765,7 @@ function importTpls(inp){
 }
 
 // ── Data ─────────────────────────────────────────────────────────
-function exportAllData(){downloadBlob(new Blob([JSON.stringify(VA.db,null,2)],{type:'application/json'}),'valueaid-backup-'+new Date().toISOString().slice(0,10)+'.json');toast('Exported');}
+function exportAllData(){downloadBlob(new Blob([JSON.stringify(VA.db,null,2)],{type:'application/json'}),'valueaid-backup-'+(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()+'.json');toast('Exported');}
 function importAllData(inp){
   const f=inp.files[0];if(!f)return;
   const r=new FileReader();r.onload=e=>{

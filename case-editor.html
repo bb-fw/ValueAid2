@@ -100,15 +100,6 @@ function addDays(date, days) {
   return localISO(d);
 }
 
-function getLinkConflicts(c, p) {
-  const ow = [];
-  if (p.ref && c.ref && p.ref !== c.ref) ow.push('Ref (' + p.ref + ' → ' + c.ref + ')');
-  if (p.addr && c.addr && p.addr !== c.addr) ow.push('Address');
-  if (p.date && c.inspDate && p.date !== c.inspDate) ow.push('Insp. Date');
-  if (p.time && c.inspTime && p.time !== c.inspTime) ow.push('Insp. Time');
-  return ow;
-}
-
 // ── Build page ────────────────────────────────────────────────
 function buildCase(c) {
   document.getElementById('ce-title').textContent = c.ref ? '#' + c.ref : 'New Case';

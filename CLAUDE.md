@@ -6,7 +6,7 @@ A Progressive Web App (PWA) for property valuers in Singapore. It manages inspec
 ## Deployment
 - **Repo:** https://github.com/bb-fw/ValueAid2
 - **Live:** https://value-aid2.vercel.app
-- **Current version:** v1.3.1 (sw.js cache key `valueaid-v1.3.1`)
+- **Current version:** v1.3.21 (sw.js cache key `valueaid-v1.3.21`)
 - Versioning: `v1.x.y` — minor version for new features, patch for fixes. Bump sw.js cache key on every release.
 
 ---
@@ -165,6 +165,7 @@ function localISO(d){
 
 9. **Tracker `isCaseComplete`** — defined as a module-level const before `renderStats()`. Both `renderStats` and `renderCases` use it. Do not define it locally inside either function.
 
+9b. **`autoMode` default** — uses `!(VA.db.settings&&VA.db.settings.defaultAutoMode===false)`. The `||true` pattern is wrong and was fixed; never revert to it.
 10. **Sort preference** persisted in `localStorage` under `va_sort_field` and `va_sort_dir`. Loaded via `loadSortPref()` on page init before first `renderCases()`.
 
 ---
@@ -185,3 +186,6 @@ function localISO(d){
 | v1.2.9 | Fix: archive functions were outside IIFE in db.js, making VA.archiveProject undefined |
 | v1.3.0 | Dead picker removed, tracker shows phone+inspected stat, new project sheet simplified, Create Case from Project |
 | v1.3.1 | jsPDF and SheetJS self-hosted (offline fix), storage indicator in Settings |
+| v1.3.2–1.3.9 | Lazy-load exports, quick-add panel, fuzzy search, maps buttons, calendar sort |
+| v1.3.10–1.3.14 | 3-part filter fix, auto/manual progress mode, unit checklist, version text |
+| v1.3.15–1.3.20 | Offline detection, completed section collapse, sw.js ignoreSearch fix, cache-aware export disable |

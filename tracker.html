@@ -179,7 +179,6 @@ const isCaseComplete=c=>{
 function renderStats() {
   const el = document.getElementById('stats-bar'); if (!el) return;
   const all = VA.db.cases||[];
-  const today = localISO(new Date());
   const completed = all.filter(isCaseComplete).length;
   const ongoing = all.length - completed;
   const nowMs=Date.now();
@@ -308,7 +307,7 @@ function newCase() {
     inspDate:'', inspTime:'',
     createdAt: today, deadline:'',
     stage: defaultCl ? defaultCl.stages[0] : VA.BUILTIN_STAGES[0],
-    autoMode: (VA.db.settings&&VA.db.settings.defaultAutoMode!==false)||true, autoComplete: false,
+    autoMode: !(VA.db.settings&&VA.db.settings.defaultAutoMode===false), autoComplete: false,
     delayed: false, notes:'',
     checklistId: defaultCl ? defaultCl.id : '',
     checklistSnapshot: defaultCl ? [...defaultCl.stages] : [...VA.BUILTIN_STAGES],
