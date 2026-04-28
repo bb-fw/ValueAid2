@@ -26,9 +26,12 @@ function _setOfflineState(isOffline) {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'offline-banner';
-    banner.style.cssText = 'display:none;background:var(--ambg);color:var(--am);font-size:11px;font-weight:600;text-align:center;padding:4px 8px;letter-spacing:.3px';
-    banner.textContent = '⚡ Offline — export unavailable';
-    document.body.prepend(banner);
+    // Fixed position — never affects document flow or nav bar height
+    banner.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:9999;'
+      + 'background:var(--ambg);color:var(--am);font-size:11px;font-weight:600;'
+      + 'text-align:center;padding:5px 8px;letter-spacing:.3px;border-bottom:1px solid var(--am)';
+    banner.textContent = '\u26a1 Offline \u2014 export unavailable';
+    document.body.appendChild(banner);
   }
   banner.style.display = isOffline ? 'block' : 'none';
   // Disable/enable export buttons

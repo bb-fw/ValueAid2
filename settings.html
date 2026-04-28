@@ -204,7 +204,12 @@
         </div>
       </div>
 
-      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.14 &bull; Property Valuer Toolkit</div>
+      <div id="cache-status" style="margin:0 0 4px;padding:10px 14px;background:var(--sf2);border-radius:var(--r);font-size:11px;color:var(--txmt)">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--tx)">Offline Cache</div>
+        <div style="display:flex;flex-direction:column;gap:4px" id="cache-status-rows">Checking…</div>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.17 &bull; Property Valuer Toolkit</div>
     </div>
   </div>
   <nav class="bottom-nav">
@@ -832,6 +837,37 @@ renderDefaultModeTog();
 renderStorageIndicator();
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
 
+// ── Cache status ───────────────────────────────────────────────
+(function checkCacheStatus() {
+  const el = document.getElementById('cache-status-rows');
+  if (!el) return;
+  if (!('serviceWorker' in navigator)) {
+    el.innerHTML = '<span>Service worker not supported</span>'; return;
+  }
+  if (!navigator.serviceWorker.controller) {
+    el.innerHTML = '<span style="color:var(--am)">&#9888; SW not active — open app online to enable offline mode</span>'; return;
+  }
+  navigator.serviceWorker.controller.postMessage({ type: 'CACHE_STATUS' });
+  navigator.serviceWorker.addEventListener('message', function handler(ev) {
+    if (ev.data && ev.data.type === 'CACHE_STATUS_RESULT') {
+      navigator.serviceWorker.removeEventListener('message', handler);
+      const { core, libs } = ev.data;
+      const row = (label, cached, total, okColor) => {
+        const full = cached === total;
+        const color = full ? (okColor||'var(--gn)') : cached === 0 ? 'var(--rd)' : 'var(--am)';
+        const icon = full ? '&#10003;' : cached === 0 ? '&#10007;' : '&#9203;';
+        return `<div style="display:flex;align-items:center;justify-content:space-between">
+          <span>${label}</span>
+          <span style="color:${color};font-weight:600">${icon} ${cached}/${total}</span>
+        </div>`;
+      };
+      el.innerHTML =
+        row('App (core files)', core.cached, core.total) +
+        row('Export libraries', libs.cached, libs.total, 'var(--bl)');
+    }
+  });
+})();
+
 // ═══════════════════════════════════════════════════════════════
 //  CHECKLIST MANAGER (Case Tracker pipelines)
 // ═══════════════════════════════════════════════════════════════
@@ -994,6 +1030,5 @@ function deleteChecklist(id) {
 }
 
 </script>
-<div style="text-align:center;padding:20px 0 32px;font-size:11px;color:var(--txmt)">ValueAid v1.3.14</div>
 </body>
 </html>
