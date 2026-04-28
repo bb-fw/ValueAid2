@@ -21,27 +21,40 @@ function toast(msg) {
 
 // ── Offline / Online detection ──────────────────────────────
 function _setOfflineState(isOffline) {
-  // Show/hide offline banner in header
   let banner = document.getElementById('offline-banner');
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'offline-banner';
-    // Fixed position — never affects document flow or nav bar height
     banner.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:9999;'
       + 'background:var(--ambg);color:var(--am);font-size:11px;font-weight:600;'
       + 'text-align:center;padding:5px 8px;letter-spacing:.3px;border-bottom:1px solid var(--am)';
-    banner.textContent = '\u26a1 Offline \u2014 export unavailable';
     document.body.appendChild(banner);
   }
-  banner.style.display = isOffline ? 'block' : 'none';
-  // Disable/enable export buttons
-  ['ed-pdf-btn','travel-excel-btn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.disabled = isOffline;
-    el.style.opacity = isOffline ? '0.4' : '';
-    el.title = isOffline ? 'Unavailable offline' : '';
-  });
+  if (!isOffline) {
+    banner.style.display = 'none';
+    // Re-enable export buttons when back online
+    ['ed-pdf-btn','travel-excel-btn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.disabled = false; el.style.opacity = ''; el.title = '';
+    });
+    return;
+  }
+  // Offline — check if export libraries are cached before disabling buttons
+  const libs = ['js/jspdf.umd.min.js', 'js/xlsx.full.min.js'];
+  Promise.all(libs.map(url => caches.match(url).then(r => !!r).catch(() => false)))
+    .then(results => {
+      const allCached = results.every(Boolean);
+      banner.textContent = '\u26a1 Offline \u2014 export unavailable';
+      banner.style.display = allCached ? 'none' : 'block';
+      ['ed-pdf-btn','travel-excel-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = !allCached;
+        el.style.opacity = allCached ? '' : '0.4';
+        el.title = allCached ? '' : 'Unavailable offline';
+      });
+    });
 }
 function _warmLibraryCache() {
   // Pre-fetch export libraries when online so they're cached by SW for offline use
