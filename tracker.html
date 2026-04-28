@@ -95,6 +95,11 @@
 'use strict';
 
 let searchQuery = '';
+let _completedExpanded = false;
+function toggleCompletedSection() {
+  _completedExpanded = !_completedExpanded;
+  renderCases();
+}
 function localISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day;}
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -285,8 +290,11 @@ function renderCases() {
   const completed = cases.filter(c => isCaseComplete(c));
   let html = active.map(cardHtml).join('');
   if (completed.length) {
-    html += sectionHeader('Completed', 'var(--gn)');
-    html += completed.map(cardHtml).join('');
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--txmt);padding:12px 2px 5px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleCompletedSection()">
+      <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--gn);display:inline-block"></span>Completed (${completed.length})</div>
+      <span style="font-size:14px">${_completedExpanded ? '&#9650;' : '&#9660;'}</span>
+    </div>`;
+    if (_completedExpanded) html += completed.map(cardHtml).join('');
   }
   el.innerHTML = html;
 }

@@ -19,6 +19,37 @@ function toast(msg) {
   _toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
+// ── Offline / Online detection ──────────────────────────────
+function _setOfflineState(isOffline) {
+  // Show/hide offline banner in header
+  let banner = document.getElementById('offline-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'offline-banner';
+    banner.style.cssText = 'display:none;background:var(--ambg);color:var(--am);font-size:11px;font-weight:600;text-align:center;padding:4px 8px;letter-spacing:.3px';
+    banner.textContent = '⚡ Offline — export unavailable';
+    document.body.prepend(banner);
+  }
+  banner.style.display = isOffline ? 'block' : 'none';
+  // Disable/enable export buttons
+  ['ed-pdf-btn','travel-excel-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = isOffline;
+    el.style.opacity = isOffline ? '0.4' : '';
+    el.title = isOffline ? 'Unavailable offline' : '';
+  });
+}
+function _warmLibraryCache() {
+  // Pre-fetch export libraries when online so they're cached by SW for offline use
+  if (!navigator.onLine) return;
+  ['js/jspdf.umd.min.js','js/xlsx.full.min.js'].forEach(url => {
+    fetch(url, { cache: 'force-cache' }).catch(() => {});
+  });
+}
+window.addEventListener('online',  () => { _setOfflineState(false); _warmLibraryCache(); });
+window.addEventListener('offline', () => _setOfflineState(true));
+
 function applyTheme(t) {
   document.documentElement.setAttribute('data-theme', t);
   VA.db.settings.theme = t;
@@ -224,4 +255,6 @@ function pageInit() {
   initOverlayClose();
   initLocClose();
   highlightNav();
+  _setOfflineState(!navigator.onLine);
+  _warmLibraryCache();
 }
