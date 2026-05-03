@@ -87,6 +87,8 @@ const VA_PICKER = (() => {
 
     if (title) title.textContent = _title;
     if (search) search.value = '';
+    const clrBtn = document.getElementById('va-pk-clear');
+    if (clrBtn) clrBtn.style.display = 'none';
     if (customRow) customRow.style.display = _onCustomAdd ? 'flex' : 'none';
     if (customInp) { customInp.value = ''; customInp.placeholder = 'Add custom...'; }
     if (doneBtn) {
@@ -131,7 +133,18 @@ const VA_PICKER = (() => {
     }
   }
 
-  function _onSearch(q) { _render(q); }
+  function _onSearch(q) {
+    _render(q);
+    const btn = document.getElementById('va-pk-clear');
+    if (btn) btn.style.display = q ? 'block' : 'none';
+  }
+  function clearSearch() {
+    const inp = document.getElementById('va-pk-search');
+    const btn = document.getElementById('va-pk-clear');
+    if (inp) { inp.value = ''; inp.focus(); }
+    if (btn) btn.style.display = 'none';
+    _render('');
+  }
 
   function addCustom() {
     const inp = document.getElementById('va-pk-custom-inp');
@@ -151,5 +164,5 @@ const VA_PICKER = (() => {
     toast('Added: ' + v);
   }
 
-  return { openMulti, openSingle, addCustom, _onSearch };
+  return { openMulti, openSingle, addCustom, _onSearch, clearSearch };
 })();

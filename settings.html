@@ -137,7 +137,21 @@
       <!-- ── GENERAL ────────────────────────────────────────── -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--txmt);margin:16px 0 8px 2px">General</div>
 
-      <!-- VALUERS -->
+      <!-- CLAIM RATE -->
+      <div class="card mb12">
+        <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-size:13px;font-weight:600">Claim Rate per km</div>
+            <div class="hint" style="margin-top:2px">Used for driving trip claimable calculation</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <span style="font-size:13px;color:var(--txmt)">S$</span>
+            <input type="number" id="claim-rate-inp" min="0" step="0.01" style="width:64px;text-align:right"
+                   value="0.70" oninput="saveClaimRate(this.value)">
+            <span style="font-size:13px;color:var(--txmt)">/km</span>
+          </div>
+        </div>
+      </div>
       <div class="card mb12">
         <div class="card-collapse-hdr" onclick="toggleCard(this)"><h3>Valuers</h3><span class="chev">&#9660;</span></div>
         <div class="card-collapse-body">
@@ -209,7 +223,7 @@
         <div style="display:flex;flex-direction:column;gap:4px" id="cache-status-rows">Checking…</div>
       </div>
 
-      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.21 &bull; Property Valuer Toolkit</div>
+      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.22 &bull; Property Valuer Toolkit</div>
     </div>
   </div>
   <nav class="bottom-nav">
@@ -268,7 +282,7 @@
         <button class="btn bp bsm" onclick="VA_PICKER.addCustom()">Add</button>
       </div>
       <div style="position:relative;margin-bottom:10px">
-        <input type="text" id="va-pk-search" placeholder="Search..." style="padding-left:32px"
+        <input type="text" id="va-pk-search" placeholder="Search..." style="padding-left:32px;padding-right:30px"
                oninput="VA_PICKER._onSearch(this.value)">
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
       </div>
@@ -835,6 +849,8 @@ loadTplEditor();
 renderCLList();
 renderDefaultModeTog();
 renderStorageIndicator();
+const _cr = document.getElementById('claim-rate-inp');
+if (_cr) _cr.value = (VA.db.settings&&VA.db.settings.claimRatePerKm)||0.70;
 try{if(!localStorage.getItem('va_notice_dismissed'))document.getElementById('storage-notice').style.display='block';}catch(e){}
 
 // ── Cache status ───────────────────────────────────────────────
@@ -1004,6 +1020,11 @@ function saveChecklistEditor() {
   VA.save(); closeOv('ov-cl-edit'); renderCLList(); toast('Checklist saved');
 }
 
+function saveClaimRate(v) {
+  if (!VA.db.settings) VA.db.settings = {};
+  VA.db.settings.claimRatePerKm = parseFloat(v) || 0.70;
+  VA.save();
+}
 function renderDefaultModeTog() {
   const isAuto = VA.db.settings.defaultAutoMode !== false;
   const btn = document.getElementById('default-mode-tog');

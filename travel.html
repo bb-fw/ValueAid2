@@ -27,6 +27,12 @@
         <h2>Travel Log</h2>
         <button id="travel-excel-btn" class="btn bs bsm" onclick="exportTravelXLSX()">&#8659; Export Excel</button>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <button class="btn bs bsm" onclick="shiftMonth(-1)">&#9664;</button>
+        <span id="month-label" style="font-size:14px;font-weight:600"></span>
+        <button class="btn bs bsm" onclick="shiftMonth(1)">&#9654;</button>
+      </div>
+      <div id="month-summary" style="display:none;background:var(--sf2);border-radius:var(--r);padding:8px 12px;margin-bottom:10px;font-size:12px;display:flex;gap:16px"></div>
       <div id="travel-list"></div>
     </div>
   </div>
@@ -175,9 +181,10 @@ let editingTripId = null;
 
 // ─── EXCEL EXPORT ──────────────────────────────────────────────
 function exportTravelXLSX() {
-  const trips = VA.db.travels.filter(t => t.endTime)
+  const ym = _viewYM || currentYM();
+  const trips = VA.db.travels.filter(t => t.endTime && (t.date||'').startsWith(ym))
     .sort((a,b) => new Date(a.startTime||0) - new Date(b.startTime||0));
-  if (!trips.length) { toast('No completed trips to export'); return; }
+  if (!trips.length) { toast('No trips for '+fmtYM(ym)); return; }
   const rows = [['Date','From','To','Start','End','Duration','Methods','Parking','ERP','Taxi (S$)','Distance (km)','Notes']];
   trips.forEach(t => {
     const start = t.startTime ? VA.fmtTime(new Date(t.startTime)) : '';
@@ -202,22 +209,51 @@ function exportTravelXLSX() {
   ws['!cols'] = [10,24,24,8,8,8,20,8,6,10,12,24].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws, 'Travel Log');
   const date = (()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-  XLSX.writeFile(wb, 'travel-log-'+date+'.xlsx');
+  XLSX.writeFile(wb, 'travel-log-'+ym+'.xlsx');
   toast('Exported');
 }
 
 // ─── RENDER ────────────────────────────────────────────────────
+let _viewYM = null; // 'YYYY-MM'
+function currentYM() {
+  const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function fmtYM(ym) {
+  const [y,m]=ym.split('-'); const n=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return n[parseInt(m,10)-1]+' '+y;
+}
+function shiftMonth(dir) {
+  const [y,m]=(_viewYM||currentYM()).split('-').map(Number);
+  const d=new Date(y,m-1+dir,1);
+  _viewYM=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  renderTravels();
+}
 function renderTravels() {
-  const el = document.getElementById('travel-list');
-  const ip = VA.db.travels.filter(t=>!t.endTime);
-  const done = VA.db.travels.filter(t=>t.endTime).sort((a,b)=>new Date(b.endTime)-new Date(a.endTime));
-  if (!ip.length&&!done.length) {
-    el.innerHTML='<div class="empty-state"><div class="esi">&#128663;</div><h3>No trips logged</h3><p>Tap + to start recording your travel.</p></div>';
+  if(!_viewYM) _viewYM=currentYM();
+  document.getElementById('month-label').textContent=fmtYM(_viewYM);
+  const el=document.getElementById('travel-list');
+  const ip=VA.db.travels.filter(t=>!t.endTime);
+  const done=VA.db.travels.filter(t=>t.endTime&&(t.date||'').startsWith(_viewYM))
+    .sort((a,b)=>new Date(b.endTime)-new Date(a.endTime));
+  // Monthly summary
+  const rate=+(VA.db.settings&&VA.db.settings.claimRatePerKm)||0.70;
+  const drivingTrips=done.filter(t=>(t.methods||[]).includes('Driving')&&t.distKm);
+  const taxiTrips=done.filter(t=>((t.methods||[]).some(m=>m.includes('Taxi')||m.includes('Grab')))&&t.taxiFare);
+  const claimAmt=drivingTrips.reduce((s,t)=>s+(parseFloat(t.distKm)||0),0)*rate;
+  const taxiAmt=taxiTrips.reduce((s,t)=>s+(parseFloat(t.taxiFare)||0),0);
+  const sumEl=document.getElementById('month-summary');
+  if(done.length&&sumEl){
+    sumEl.style.display='flex';
+    sumEl.innerHTML=(drivingTrips.length?`<span><b>&#128663; Driving:</b> S$${claimAmt.toFixed(2)} claimable (${drivingTrips.reduce((s,t)=>s+(parseFloat(t.distKm)||0),0).toFixed(1)} km)</span>`:'')
+      +(taxiTrips.length?`<span><b>&#128664; Taxi/Grab:</b> S$${taxiAmt.toFixed(2)}</span>`:'');
+  } else if(sumEl) sumEl.style.display='none';
+  if(!ip.length&&!done.length){
+    el.innerHTML='<div class="empty-state"><div class="esi">&#128663;</div><h3>No trips in '+fmtYM(_viewYM)+'</h3><p>Use the arrows to browse other months or tap + to log a trip.</p></div>';
     return;
   }
   let h='';
   ip.forEach(t=>h+=buildCard(t,true));
-  const gr={};done.forEach(t=>{const d=t.date||t.endTime?.slice(0,10)||'?';if(!gr[d])gr[d]=[];gr[d].push(t);});
+  const gr={};done.forEach(t=>{const d=t.date||'?';if(!gr[d])gr[d]=[];gr[d].push(t);});
   Object.keys(gr).sort((a,b)=>new Date(b)-new Date(a)).forEach(d=>{
     h+=`<div class="date-grp">${VA.fmtDateLong(d)}</div>`;
     gr[d].forEach(t=>h+=buildCard(t,false));
