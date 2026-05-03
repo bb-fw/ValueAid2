@@ -16,6 +16,8 @@ function openQuickPanel() {
   _qpDirty = false;
   _qpRows = buildQpRows(p);
   renderQpList(_qpRows);
+  const qclrBtn = document.getElementById('qp-clear');
+  if (qclrBtn) qclrBtn.style.display = 'none';
   document.getElementById('qp-search').value = '';
   openOv('qp-ov');
   document.getElementById('qp-search').focus();
@@ -30,8 +32,17 @@ function qpDone() {
   closeOv('qp-ov');
 }
 
+function qpClearSearch() {
+  const inp = document.getElementById('qp-search');
+  const btn = document.getElementById('qp-clear');
+  if (inp) { inp.value = ''; inp.focus(); }
+  if (btn) btn.style.display = 'none';
+  renderQpList(_qpRows);
+}
 function qpFilter(q) {
   const lq = q.trim().toLowerCase();
+  const qclr = document.getElementById('qp-clear');
+  if (qclr) qclr.style.display = lq ? 'block' : 'none';
   if (!lq) { renderQpList(_qpRows); return; }
   // Detect positional delimiter ' - ' or ' x '
   const delim = lq.includes(' - ') ? ' - ' : lq.includes(' x ') ? ' x ' : null;

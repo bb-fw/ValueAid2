@@ -121,9 +121,10 @@
     <div id="qp-list" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0"></div>
     <div style="flex-shrink:0;padding:10px 16px;border-top:1px solid var(--bd);background:var(--sf)">
       <div style="position:relative;margin-bottom:10px">
-        <input type="text" id="qp-search" placeholder="Search…" style="padding-left:32px"
+        <input type="text" id="qp-search" placeholder="Search…" style="padding-left:32px;padding-right:30px"
                oninput="qpFilter(this.value)">
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txmt);font-size:15px;pointer-events:none">⌕</span>
+        <button id="qp-clear" onclick="qpClearSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txmt);font-size:16px;cursor:pointer;padding:2px 4px">&#10005;</button>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:15px;font-weight:600">Quick Add / Remove</span>

@@ -6,7 +6,7 @@ A Progressive Web App (PWA) for property valuers in Singapore. It manages inspec
 ## Deployment
 - **Repo:** https://github.com/bb-fw/ValueAid2
 - **Live:** https://value-aid2.vercel.app
-- **Current version:** v1.3.22 (sw.js cache key `valueaid-v1.3.22`)
+- **Current version:** v1.3.23 (sw.js cache key `valueaid-v1.3.23`)
 - Versioning: `v1.x.y` — minor version for new features, patch for fixes. Bump sw.js cache key on every release.
 
 ---
