@@ -201,6 +201,37 @@ function autoSave() {
 function saveClose(){ autoSave(); location.href='index.html'; }
 function doExportPDF(){ const p=gP(); if(!p) return; if(!p.archived){ const r=readEd(); if(!r) return; VA.save(); } exportProjectPDF(p); }
 
+// ── Export dropdown ───────────────────────────────────────────
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('ed-export-menu');
+  if (!menu) return;
+  const wasOpen = menu.classList.contains('open');
+  closeExportMenu(); closeEditorMenu();
+  if (!wasOpen) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    menu.style.left = Math.max(8, rect.left) + 'px';
+    menu.style.top  = (rect.top - 4 - 96) + 'px';
+    menu.classList.add('open');
+  }
+}
+function closeExportMenu() {
+  document.getElementById('ed-export-menu')?.classList.remove('open');
+}
+document.addEventListener('click', () => closeExportMenu());
+
+function doExportXLSX() {
+  const p = gP(); if (!p) return;
+  if (!p.archived) { const r = readEd(); if (!r) return; VA.save(); }
+  // Lazy-load SheetJS then run export
+  if (typeof XLSX !== 'undefined') { exportProjectXLSX(p); return; }
+  const sc = document.createElement('script');
+  sc.src = 'js/xlsx.full.min.js';
+  sc.onload = () => exportProjectXLSX(p);
+  sc.onerror = () => toast('Excel library not loaded — check connection');
+  document.head.appendChild(sc);
+}
+
 function rebuildFindings(p) {
   const scrollY = window.scrollY;
   buildEditor(p);

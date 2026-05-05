@@ -140,3 +140,107 @@ function exportProjectPDF(p) {
   doc.save(fn+'.pdf');
   toast('PDF exported');
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  ValueAid — Export: Excel (SheetJS, lazy-loaded)
+// ═══════════════════════════════════════════════════════════════
+
+function exportProjectXLSX(p) {
+  if (typeof XLSX === 'undefined') { toast('Excel library not available'); return; }
+  const wb = XLSX.utils.book_new();
+  const isB = p.layout === 'B';
+  const fn  = [(p.ref||'Report'), 'Inspection Sheet'].join('-');
+
+  if (isB) {
+    _xlsxPerUnit(wb, p);
+  } else {
+    _xlsxStandardFindings(wb, p);
+    _xlsxStandardAccom(wb, p);
+  }
+
+  XLSX.writeFile(wb, fn + '.xlsx');
+  toast('Excel exported');
+}
+
+// ── Standard layout — Sheet 1: Findings ──────────────────────
+function _xlsxStandardFindings(wb, p) {
+  const rows = [['Category', 'Selected Items', 'Notes']];
+  (p.cats||[]).forEach(cat => {
+    const sel   = (cat.items||[]).filter(i => i.sel);
+    const noted = (cat.items||[]).filter(i => i.notes && i.notes.trim());
+    if (!sel.length && !noted.length) return;
+    const selNames = sel.map(i => i.name).join(', ');
+    const noteStr  = noted.map(i => i.name + ': ' + i.notes.trim()).join('; ');
+    rows.push([cat.name, selNames, noteStr]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:22},{wch:42},{wch:50}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Findings');
+}
+
+// ── Standard layout — Sheet 2: Accommodations ────────────────
+function _xlsxStandardAccom(wb, p) {
+  if (!(p.levels||[]).length) return;
+  const rows = [['Level / Floor', 'Rooms']];
+  (p.levels||[]).forEach(lv => {
+    rows.push([lv.name||'', (lv.rooms||[]).join(', ')]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:20},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Accommodations');
+}
+
+// ── Per-unit layout — one matrix sheet ───────────────────────
+function _xlsxPerUnit(wb, p) {
+  const levels = p.levels || [];
+  if (!levels.length) return;
+
+  // Determine all categories from first unit (or p.cats fallback)
+  const cats = levels[0]?.cats || p.cats || [];
+  if (!cats.length) return;
+
+  const ck = cat => cat.id || cat.name;
+
+  // Build header row: Unit | Cat1 | Cat2 | ...
+  const header = ['Unit / Room', ...cats.map(c => c.name)];
+
+  // Build data rows: one per unit
+  const dataRows = levels.map(u => {
+    const row = [u.name || ''];
+    cats.forEach(cat => {
+      const ud = u.catData && u.catData[ck(cat)]
+        ? u.catData[ck(cat)]
+        : { items: [], notes: '' };
+      const items = ud.items || [];
+
+      const parts = [];
+      // Selected items, with inline note if present
+      items.filter(i => i.sel).forEach(i => {
+        if (i.notes && i.notes.trim()) {
+          parts.push(i.name + ' (' + i.notes.trim() + ')');
+        } else {
+          parts.push(i.name);
+        }
+      });
+      // Items with notes but not selected
+      items.filter(i => !i.sel && i.notes && i.notes.trim()).forEach(i => {
+        parts.push(i.name + ' [note: ' + i.notes.trim() + ']');
+      });
+      // Category-level notes
+      if (ud.notes && ud.notes.trim()) parts.push('[' + ud.notes.trim() + ']');
+
+      row.push(parts.join(', '));
+    });
+    return row;
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...dataRows]);
+
+  // Column widths: first col narrow, rest wider for content
+  ws['!cols'] = [
+    {wch: 20},
+    ...cats.map(() => ({wch: 32}))
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Inspection Matrix');
+}

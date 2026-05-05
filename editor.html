@@ -28,7 +28,13 @@
       </div>
     </div>
     <button class="btn bs bsm" onclick="openQuickPanel()" title="Quick Add / Remove">&#9889;</button>
-    <button id="ed-pdf-btn" class="btn bs bsm" onclick="doExportPDF()">&#128196; PDF</button>
+    <div style="position:relative">
+      <button id="ed-pdf-btn" class="btn bs bsm" onclick="toggleExportMenu(event)">&#8659; Export</button>
+      <div class="cat-menu" id="ed-export-menu" style="min-width:150px">
+        <div class="cat-menu-item" onclick="closeExportMenu();doExportPDF()">&#128196; PDF</div>
+        <div class="cat-menu-item" onclick="closeExportMenu();doExportXLSX()">&#128202; Excel</div>
+      </div>
+    </div>
     <button class="btn bs bsm" style="font-size:16px;padding:6px 10px" onclick="openCameraTag()" title="Take Photo">&#128247;</button>
     <button class="btn bp" style="flex:1" onclick="saveClose()">Close</button>
   </div>
