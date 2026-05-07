@@ -223,7 +223,7 @@
         <div style="display:flex;flex-direction:column;gap:4px" id="cache-status-rows">Checking…</div>
       </div>
 
-      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.24 &bull; Property Valuer Toolkit</div>
+      <div style="text-align:center;font-size:12px;color:var(--txmt);padding:8px 8px 24px">ValueAid v1.3.25 &bull; Property Valuer Toolkit</div>
     </div>
   </div>
   <nav class="bottom-nav">
@@ -474,6 +474,22 @@ function renderCatEditItems() {
   (_catEditData.items||[]).forEach((item, i) => {
     const row = document.createElement('div'); row.className='ord-row';
     const sp = document.createElement('span'); sp.className='ord-name'; sp.style.fontSize='13px'; sp.textContent=item;
+    sp.title='Tap to rename';
+    sp.style.cursor='pointer';
+    sp.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.value = _catEditData.items[i];
+      inp.style.cssText='flex:1;font-size:13px;padding:2px 6px;border:1px solid var(--bl);border-radius:var(--r);min-width:0';
+      sp.replaceWith(inp); inp.focus(); inp.select();
+      const commit = () => {
+        const v = inp.value.trim();
+        if (!v) { renderCatEditItems(); return; }
+        if (v !== _catEditData.items[i] && _catEditData.items.includes(v)) { toast('"'+v+'" already exists'); return; }
+        _catEditData.items[i] = v; renderCatEditItems();
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') renderCatEditItems(); });
+    });
     const btns = document.createElement('div'); btns.className='ord-btns';
     const up = document.createElement('button'); up.className='ord-btn'; up.textContent='↑'; up.disabled=i===0;
     up.addEventListener('click',()=>{ const a=_catEditData.items; [a[i],a[i-1]]=[a[i-1],a[i]]; renderCatEditItems(); });
@@ -587,6 +603,21 @@ function renderRLEditItems() {
   (_rlEditData.rooms||[]).forEach((room,i)=>{
     const row=document.createElement('div');row.className='ord-row';
     const sp=document.createElement('span');sp.className='ord-name';sp.style.fontSize='13px';sp.textContent=room;
+    sp.title='Tap to rename'; sp.style.cursor='pointer';
+    sp.addEventListener('click', () => {
+      const inp=document.createElement('input');
+      inp.value=_rlEditData.rooms[i];
+      inp.style.cssText='flex:1;font-size:13px;padding:2px 6px;border:1px solid var(--bl);border-radius:var(--r);min-width:0';
+      sp.replaceWith(inp); inp.focus(); inp.select();
+      const commit=()=>{
+        const v=inp.value.trim();
+        if(!v){renderRLEditItems();return;}
+        if(v!==_rlEditData.rooms[i]&&_rlEditData.rooms.includes(v)){toast('"'+v+'" already exists');return;}
+        _rlEditData.rooms[i]=v; renderRLEditItems();
+      };
+      inp.addEventListener('blur',commit);
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape')renderRLEditItems();});
+    });
     const btns=document.createElement('div');btns.className='ord-btns';
     const up=document.createElement('button');up.className='ord-btn';up.textContent='↑';up.disabled=i===0;
     up.addEventListener('click',()=>{const a=_rlEditData.rooms;[a[i],a[i-1]]=[a[i-1],a[i]];renderRLEditItems();});

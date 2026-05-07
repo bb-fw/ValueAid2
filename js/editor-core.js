@@ -211,7 +211,7 @@ function toggleExportMenu(e) {
   if (!wasOpen) {
     const rect = e.currentTarget.getBoundingClientRect();
     menu.style.left = Math.max(8, rect.left) + 'px';
-    menu.style.top  = (rect.top - 4 - 96) + 'px';
+    menu.style.top  = (rect.top - 8 - 88) + 'px';
     menu.classList.add('open');
   }
 }
